@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import cors from "cors";
 import imageRoutes from "./routes/imageRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
+import productTypeRoutes from "./routes/productTypeRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 
 const app = express();
@@ -25,6 +26,7 @@ const MONGOURL =
 
 app.use("/upload", imageRoutes);
 app.use("/category", categoryRoutes);
+app.use("/productType", productTypeRoutes);
 app.use("/product", productRoutes);
 
 app.get("/", (req, res) => {

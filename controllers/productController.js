@@ -25,12 +25,14 @@ export const getProducts = async (req, res) => {
       search,
       slug,
       category,
+      type,
       status,
       premium,
       priceStart,
       priceEnd,
       startDate,
       endDate,
+      color,
       page = 1,
       limit = 10,
     } = req.body;
@@ -43,28 +45,38 @@ export const getProducts = async (req, res) => {
         { subTitle: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
         { categories: { $regex: search, $options: "i" } },
+        { type: { $regex: search, $options: "i" } },
       ];
     }
 
     if (slug) filter.slug = slug;
     if (category) filter.categories = category;
+    if (type) filter.type = type;
     if (status) filter.status = status;
     if (typeof premium === "boolean") filter.premium = premium;
+    if (color) filter.color = { $regex: new RegExp(`^${color}$`, "i") };
 
-    if (priceStart !== undefined || priceEnd !== undefined) {
-      filter.price = {};
-      if (priceStart !== undefined) filter.price.$gte = priceStart;
-      if (priceEnd !== undefined) filter.price.$lte = priceEnd;
-    }
+    const minPrice = parseFloat(priceStart);
+    const maxPrice = parseFloat(priceEnd);
 
-    if (startDate && endDate) {
-      filter.createdAt = {
-        $gte: new Date(startDate),
-        $lte: new Date(endDate),
+    if (!isNaN(minPrice) || !isNaN(maxPrice)) {
+      filter.$expr = {
+        $and: [
+          ...(isNaN(minPrice)
+            ? []
+            : [{ $gte: [{ $toDouble: "$price" }, minPrice] }]),
+          ...(isNaN(maxPrice)
+            ? []
+            : [{ $lte: [{ $toDouble: "$price" }, maxPrice] }]),
+        ],
       };
     }
+    if (startDate || endDate) {
+      const start = startDate ? new Date(startDate) : new Date("1970-01-01");
+      const end = endDate ? new Date(endDate) : new Date();
+      filter.createdAt = { $gte: start, $lte: end };
+    }
 
-    // Pagination logic
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const [products, total] = await Promise.all([
@@ -72,8 +84,9 @@ export const getProducts = async (req, res) => {
       Product.countDocuments(filter),
     ]);
 
-    if (search && products.length === 0) {
+    if (products.length === 0) {
       return sendSuccess(res, "No results found", {
+        status: 404,
         data: [],
         page: parseInt(page),
         totalPages: 0,

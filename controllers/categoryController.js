@@ -11,7 +11,7 @@ export const addCategory = async (req, res) => {
     const exists = await Category.findOne({ name });
     if (exists) return sendError(res, "Category already exists", 400);
 
-    const newCategory = await Category.create( req.body );
+    const newCategory = await Category.create(req.body);
     return sendSuccess(res, "Category created successfully", newCategory);
   } catch (error) {
     return sendError(res, error.message, 500);
@@ -69,10 +69,20 @@ export const updateCategory = async (req, res) => {
     const category = await Category.findById(id);
     if (!category) return sendError(res, "Category not found", 404);
 
-    const updated = await Category.findByIdAndUpdate(
-      id, req.body,
-      { new: true, runValidators: true }
-    );
+    if (name && name !== product.name) {
+      const isExist = await Category.findOne({
+        name,
+        _id: { $ne: id },
+      });
+      if (isExist) {
+        return sendError(res, "Category with this title already exists", 400);
+      }
+    }
+
+    const updated = await Category.findByIdAndUpdate(id, req.body, {
+      new: true,
+      runValidators: true,
+    });
 
     return sendSuccess(res, "Category updated successfully", updated);
   } catch (error) {

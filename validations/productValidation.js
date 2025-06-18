@@ -25,17 +25,25 @@ export const productValidationSchema = yup.object({
     .required("Description is required"),
 
   originalPrice: yup
-    .number()
-    .typeError("Original price must be a valid number")
+    .string()
     .required("Original price is required")
-    .min(0, "Original price cannot be negative"),
+    .test(
+      "is-valid-number",
+      "Original price must be a non-negative number",
+      (value) =>
+        value !== undefined && !isNaN(Number(value)) && Number(value) >= 0
+    ),
 
   price: yup
-    .number()
-    .typeError("Price must be a valid number")
+    .string()
     .required("Price is required")
-    .min(0, "Price cannot be negative"),
-    
+    .test(
+      "is-valid-number",
+      "Price must be a non-negative number",
+      (value) =>
+        value !== undefined && !isNaN(Number(value)) && Number(value) >= 0
+    ),
+
   image: yup
     .object({
       url: yup
