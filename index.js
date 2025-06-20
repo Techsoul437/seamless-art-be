@@ -7,6 +7,7 @@ import imageRoutes from "./routes/imageRoutes.js";
 import categoryRoutes from "./routes/categoryRoutes.js";
 import productTypeRoutes from "./routes/productTypeRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use("/upload", imageRoutes);
 app.use("/category", categoryRoutes);
 app.use("/productType", productTypeRoutes);
 app.use("/product", productRoutes);
+app.use("/auth", authRoutes);
 
 app.get("/", (req, res) => {
   res.send("TechSoul's backend is up and running!");
