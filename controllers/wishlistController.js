@@ -1,0 +1,105 @@
+import Wishlist from "../models/wishlistModel.js";
+import { sendSuccess, sendError } from "../utils/responseHelper.js";
+import {
+    createWishlistSchema,
+    addToWishlistSchema,
+} from "../validations/wishlistValidation.js";
+
+export const createWishlist = async (req, res) => {
+    try {
+        const isGuest = !req.user;
+
+        await createWishlistSchema.validate(req.body, {
+            context: { isGuest },
+        });
+
+        const { name, productId, guestId } = req.body;
+
+        let filter;
+        let wishlistData = {
+            name,
+            products: [productId],
+        };
+
+        if (isGuest) {
+            if (!guestId) return sendError(res, "guestId is required", 400);
+
+            filter = { guestId, name };
+            wishlistData.guestId = guestId;
+            wishlistData.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        } else {
+            filter = { user: req.user.userId, name };
+            wishlistData.user = req.user.userId;
+        }
+
+        const exists = await Wishlist.findOne(filter);
+        if (exists) return sendError(res, "Wishlist name already exists", 400);
+
+        const wishlist = await Wishlist.create(wishlistData);
+
+        return sendSuccess(res, "Wishlist created", wishlist);
+    } catch (error) {
+        console.error(error);
+        return sendError(res, error.message, 400);
+    }
+};
+
+export const getWishlists = async (req, res) => {
+    try {
+        const isGuest = !req.user;
+        const guestId = req.query.guestId;
+
+        let filter;
+
+        if (isGuest) {
+            if (!guestId) return sendError(res, "guestId is required", 400);
+            filter = { guestId };
+        } else {
+            filter = { user: req.user.userId };
+        }
+
+        const wishlists = await Wishlist.find(filter).populate("products");
+
+        return sendSuccess(res, "Wishlists fetched", wishlists);
+    } catch (error) {
+        return sendError(res, error.message || "Failed to fetch", 500);
+    }
+};
+
+export const addProductToWishlist = async (req, res) => {
+    try {
+        const isGuest = !req.user;
+
+        await addToWishlistSchema.validate(req.body, {
+            context: { isGuest },
+        });
+
+        const { wishlistId, productId, guestId } = req.body;
+
+        const wishlist = await Wishlist.findById(wishlistId);
+        if (!wishlist) return sendError(res, "Wishlist not found", 404);
+
+        // Ensure guestId or user is authorized to update
+        if (isGuest) {
+            if (!guestId || wishlist.guestId !== guestId) {
+                return sendError(res, "Unauthorized guest access", 403);
+            }
+        } else {
+            if (String(wishlist.user) !== String(req.user.userId)) {
+                return sendError(res, "Unauthorized user access", 403);
+            }
+        }
+
+        if (wishlist.products.includes(productId)) {
+            return sendError(res, "Product already exists in wishlist", 400);
+        }
+
+        wishlist.products.push(productId);
+        await wishlist.save();
+
+        return sendSuccess(res, "Product added", wishlist);
+    } catch (error) {
+        return sendError(res, error.message, 400);
+    }
+};
+

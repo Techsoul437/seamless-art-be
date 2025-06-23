@@ -8,6 +8,7 @@ import categoryRoutes from "./routes/categoryRoutes.js";
 import productTypeRoutes from "./routes/productTypeRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
+import wishlistRoutes from "./routes/wishlistRoutes.js";
 
 const app = express();
 
@@ -30,6 +31,7 @@ app.use("/category", categoryRoutes);
 app.use("/productType", productTypeRoutes);
 app.use("/product", productRoutes);
 app.use("/auth", authRoutes);
+app.use("/wishlist", wishlistRoutes);
 
 app.get("/", (req, res) => {
   res.send("TechSoul's backend is up and running!");
