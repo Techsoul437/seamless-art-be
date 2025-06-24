@@ -37,7 +37,7 @@ export const createWishlist = async (req, res) => {
 
         const wishlist = await Wishlist.create(wishlistData);
 
-        return sendSuccess(res, "Wishlist created", wishlist);
+        return sendSuccess(res, "Wishlist Created Successfully", wishlist);
     } catch (error) {
         console.error(error);
         return sendError(res, error.message, 400);
@@ -97,9 +97,81 @@ export const addProductToWishlist = async (req, res) => {
         wishlist.products.push(productId);
         await wishlist.save();
 
-        return sendSuccess(res, "Product added", wishlist);
+        return sendSuccess(res, "Product Added Successfully!", wishlist);
     } catch (error) {
         return sendError(res, error.message, 400);
     }
 };
 
+export const deleteWishlist = async (req, res) => {
+    try {
+        const isGuest = !req.user;
+        const { wishlistId } = req.params;
+        const guestId = req.query.guestId;
+
+        if (!wishlistId) return sendError(res, "wishlistId is required", 400);
+
+        const wishlist = await Wishlist.findById(wishlistId);
+        if (!wishlist) return sendError(res, "Wishlist not found", 404);
+
+        if (isGuest) {
+            if (!guestId || wishlist.guestId !== guestId) {
+                return sendError(res, "Unauthorized guest access", 403);
+            }
+        } else {
+            if (String(wishlist.user) !== String(req.user.userId)) {
+                return sendError(res, "Unauthorized user access", 403);
+            }
+        }
+
+        await wishlist.deleteOne();
+
+        return sendSuccess(res, "Wishlist deleted successfully");
+    } catch (error) {
+        console.error(error);
+        return sendError(res, error.message || "Failed to delete wishlist", 500);
+    }
+};
+
+export const removeProductFromWishlist = async (req, res) => {
+    try {
+        const isGuest = !req.user;
+        const { wishlistId, productId } = req.body;
+        const guestId = req.query.guestId;
+
+        if (!wishlistId || !productId) {
+            return sendError(res, "wishlistId and productId are required", 400);
+        }
+
+        const wishlist = await Wishlist.findById(wishlistId);
+        if (!wishlist) {
+            return sendError(res, "Wishlist not found", 404);
+        }
+
+        if (isGuest) {
+            if (!guestId || wishlist.guestId !== guestId) {
+                return sendError(res, "Unauthorized guest access", 403);
+            }
+        } else {
+            if (String(wishlist.user) !== String(req.user.userId)) {
+                return sendError(res, "Unauthorized user access", 403);
+            }
+        }
+
+        const productIndex = wishlist.products.findIndex(
+            (id) => String(id) === String(productId)
+        );
+
+        if (productIndex === -1) {
+            return sendError(res, "Product not found in wishlist", 400);
+        }
+
+        wishlist.products.splice(productIndex, 1);
+        await wishlist.save();
+
+        return sendSuccess(res, "Product removed from wishlist", wishlist);
+    } catch (error) {
+        console.error(error);
+        return sendError(res, error.message || "Failed to remove product", 500);
+    }
+};
