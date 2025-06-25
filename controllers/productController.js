@@ -116,7 +116,7 @@ export const getProductById = async (req, res) => {
 
     return sendSuccess(res, "Product fetched successfully", product);
   } catch (error) {
-    return sendError(res, "Invalid product ID", 500);
+    return sendError(res, error.message, 500);
   }
 };
 
