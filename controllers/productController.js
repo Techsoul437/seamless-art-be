@@ -35,6 +35,7 @@ export const getProducts = async (req, res) => {
       color,
       page = 1,
       limit = 10,
+      sort,
     } = req.body;
 
     let filter = {};
@@ -77,10 +78,29 @@ export const getProducts = async (req, res) => {
       filter.createdAt = { $gte: start, $lte: end };
     }
 
+    let sortOption = {};
+
+    switch (sort) {
+      case "price_low_to_high":
+        sortOption = { price: 1 };
+        break;
+      case "price_high_to_low":
+        sortOption = { price: -1 };
+        break;
+      case "new_to_old":
+        sortOption = { createdAt: -1 };
+        break;
+      case "old_to_new":
+        sortOption = { createdAt: 1 };
+        break;
+      default:
+        sortOption = {};
+    }
+
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
     const [products, total] = await Promise.all([
-      Product.find(filter).skip(skip).limit(parseInt(limit)),
+      Product.find(filter).sort(sortOption).skip(skip).limit(parseInt(limit)),
       Product.countDocuments(filter),
     ]);
 
