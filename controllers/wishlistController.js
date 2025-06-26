@@ -93,7 +93,6 @@ export const getWishlistById = async (req, res) => {
   }
 };
 
-
 export const addProductToWishlist = async (req, res) => {
   try {
     const isGuest = !req.user;
@@ -205,5 +204,57 @@ export const removeProductFromWishlist = async (req, res) => {
   } catch (error) {
     console.error(error);
     return sendError(res, error.message || "Failed to remove product", 500);
+  }
+};
+
+export const migrateGuestWishlist = async (req, res) => {
+  try {
+    const userId = req.user?.userId;
+    const { guestId } = req.body;
+
+    if (!userId) return sendError(res, "User not authenticated", 401);
+    if (!guestId) return sendError(res, "guestId is required", 400);
+
+    // Get all guest wishlists
+    const guestWishlists = await Wishlist.find({ guestId });
+
+    if (!guestWishlists.length) {
+      return sendSuccess(res, "No guest wishlists found", []);
+    }
+
+    const migratedWishlists = [];
+
+    for (const guestWishlist of guestWishlists) {
+      const { name, products } = guestWishlist;
+
+      // Check if user already has a wishlist with the same name
+      const existingUserWishlist = await Wishlist.findOne({ user: userId, name });
+
+      if (existingUserWishlist) {
+        // Merge products (avoid duplicates)
+        const uniqueProducts = [
+          ...new Set([
+            ...existingUserWishlist.products.map((id) => id.toString()),
+            ...products.map((id) => id.toString()),
+          ]),
+        ];
+        existingUserWishlist.products = uniqueProducts;
+        await existingUserWishlist.save();
+        await guestWishlist.deleteOne(); // Clean up guest wishlist
+        migratedWishlists.push(existingUserWishlist);
+      } else {
+        // Transfer guest wishlist to user
+        guestWishlist.user = userId;
+        guestWishlist.guestId = undefined;
+        guestWishlist.expiresAt = undefined;
+        await guestWishlist.save();
+        migratedWishlists.push(guestWishlist);
+      }
+    }
+
+    return sendSuccess(res, "Wishlists migrated successfully", migratedWishlists);
+  } catch (error) {
+    console.error("Migration error:", error);
+    return sendError(res, error.message || "Migration failed", 500);
   }
 };

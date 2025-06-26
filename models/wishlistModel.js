@@ -30,8 +30,29 @@ const wishlistSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-wishlistSchema.index({ guestId: 1, name: 1 }, { unique: true, sparse: true });
-wishlistSchema.index({ user: 1, name: 1 }, { unique: true, sparse: true });
+wishlistSchema.index(
+  { user: 1, name: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { user: { $type: "objectId" } },
+  }
+);
+
+wishlistSchema.index(
+  { guestId: 1, name: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { guestId: { $type: "string" } },
+  }
+);
+
 wishlistSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // auto-delete guest wishlists after 7 days
+
+wishlistSchema.pre("validate", function (next) {
+  if (!this.user && !this.guestId) {
+    return next(new Error("Either user or guestId must be provided."));
+  }
+  next();
+});
 
 export default mongoose.model("Wishlist", wishlistSchema);

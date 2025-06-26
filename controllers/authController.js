@@ -1,7 +1,6 @@
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../models/userModel.js";
-import Wishlist from "../models/wishlistModel.js";
 import {
   loginValidationSchema,
   sendOtpValidationSchema,
@@ -22,7 +21,7 @@ const secretKey = process.env.JWT_SECRET;
 export const signup = async (req, res) => {
   await signupValidationSchema.validate(req.body);
 
-  const { name, email, password, guestId } = req.body;
+  const { name, email, password } = req.body;
 
   try {
     const existingUser = await User.findOne({ email });
@@ -30,27 +29,12 @@ export const signup = async (req, res) => {
       return sendError(res, "Email already registered", 400);
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
-
     const newUser = await new User({
       name,
       email,
-      password: hashedPassword,
+      password,
       isVerified: false,
     }).save();
-
-    if (guestId) {
-      await Wishlist.updateMany(
-        { guestId },
-        {
-          $set: {
-            user: newUser._id,
-            guestId: null,
-            expiresAt: null,
-          },
-        }
-      );
-    }
 
     await generateAndSendOtp(newUser);
 
@@ -119,7 +103,9 @@ export const verifyEmail = async (req, res) => {
 export const signin = async (req, res) => {
   try {
     await loginValidationSchema.validate(req.body);
-    const { email, password, guestId } = req.body;
+    const { email, password } = req.body;
+
+     const hashedPassword = await bcrypt.hash(password, 12);
 
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
@@ -137,19 +123,6 @@ export const signin = async (req, res) => {
         res,
         "Email not verified. OTP resent to your email.",
         403
-      );
-    }
-
-    if (guestId) {
-      await Wishlist.updateMany(
-        { guestId },
-        {
-          $set: {
-            user: user._id,
-            guestId: null,
-            expiresAt: null,
-          },
-        }
       );
     }
 
