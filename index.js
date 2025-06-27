@@ -9,6 +9,7 @@ import productTypeRoutes from "./routes/productTypeRoutes.js";
 import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
+import cartRoutes from "./routes/cartRoutes.js";
 
 const app = express();
 
@@ -32,9 +33,10 @@ app.use("/productType", productTypeRoutes);
 app.use("/product", productRoutes);
 app.use("/auth", authRoutes);
 app.use("/wishlist", wishlistRoutes);
+app.use("/cart", cartRoutes);
 
 app.get("/", (req, res) => {
-  res.send("TechSoul's backend is up and running!");
+  res.send("Seamless's backend is up and running!");
 });
 
 mongoose
