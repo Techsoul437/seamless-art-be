@@ -105,11 +105,9 @@ export const signin = async (req, res) => {
     await loginValidationSchema.validate(req.body);
     const { email, password } = req.body;
 
-     const hashedPassword = await bcrypt.hash(password, 12);
-
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
-      return sendError(res, "You are not Registered yet!", 401);
+      return sendError(res, "You are not Registered yet!", 404);
     }
 
     const isMatch = await bcrypt.compare(password, user.password);

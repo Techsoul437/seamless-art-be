@@ -16,25 +16,29 @@ export const migrateGuestCart = async (req, res) => {
     const userCart = await Cart.findOne({ user: userId });
 
     if (userCart) {
-      // Merge items
-      const existingProductIds = new Set(
-        userCart.items.map((id) => id.toString())
+      const existingProductIds = new Set(userCart.items.map(id => id.toString()));
+      const filteredItems = guestCart.items.filter(
+        id => !existingProductIds.has(id.toString())
       );
 
-      guestCart.items.forEach((productId) => {
-        if (!existingProductIds.has(productId.toString())) {
-          userCart.items.push(productId);
-        }
-      });
-
-      await userCart.save();
+      if (filteredItems.length > 0) {
+        userCart.items.push(...filteredItems);
+        await userCart.save();
+      }
     } else {
+      // Deduplicate guestCart.items before assigning
+      const uniqueItems = Array.from(
+        new Set(guestCart.items.map(id => id.toString()))
+      ).map(idStr => new mongoose.Types.ObjectId(idStr));
+
       guestCart.user = userId;
       guestCart.guestId = undefined;
+      guestCart.items = uniqueItems;
+
       await guestCart.save();
     }
 
-    // Delete guest cart
+    // Clean up guest cart
     await Cart.deleteOne({ guestId });
 
     return sendSuccess(res, "Guest cart migrated successfully");
