@@ -217,7 +217,6 @@ export const migrateGuestWishlist = async (req, res) => {
 
     // Get all guest wishlists
     const guestWishlists = await Wishlist.find({ guestId });
-
     if (!guestWishlists.length) {
       return sendSuccess(res, "No guest wishlists found", []);
     }

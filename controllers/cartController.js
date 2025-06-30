@@ -2,6 +2,16 @@ import mongoose from "mongoose";
 import Cart from "../models/cartModel.js";
 import { sendError, sendSuccess } from "../utils/responseHelper.js";
 
+const dedupeObjectIds = (ids) => {
+  const seen = new Set();
+  return ids.filter((id) => {
+    const str = id.toString();
+    if (seen.has(str)) return false;
+    seen.add(str);
+    return true;
+  });
+};
+
 export const migrateGuestCart = async (req, res) => {
   try {
     const userId = req.user?.userId;
@@ -13,38 +23,45 @@ export const migrateGuestCart = async (req, res) => {
     const guestCart = await Cart.findOne({ guestId });
     if (!guestCart) return sendSuccess(res, "No guest cart found", []);
 
+    let migratedCart;
+
     const userCart = await Cart.findOne({ user: userId });
 
     if (userCart) {
-      const existingProductIds = new Set(userCart.items.map(id => id.toString()));
-      const filteredItems = guestCart.items.filter(
-        id => !existingProductIds.has(id.toString())
+      const existingProductIds = new Set(
+        userCart.items.map((id) => id.toString())
       );
 
-      if (filteredItems.length > 0) {
-        userCart.items.push(...filteredItems);
-        await userCart.save();
+      const newItems = guestCart.items.filter(
+        (id) => !existingProductIds.has(id.toString())
+      );
+
+      if (newItems.length > 0) {
+        migratedCart = await Cart.findOneAndUpdate(
+          { _id: userCart._id },
+          { $addToSet: { items: { $each: newItems } } },
+          { new: true }
+        );
+      } else {
+        migratedCart = userCart;
       }
+
+      await guestCart.deleteOne(); // Clean up guest cart
     } else {
-      // Deduplicate guestCart.items before assigning
-      const uniqueItems = Array.from(
-        new Set(guestCart.items.map(id => id.toString()))
-      ).map(idStr => new mongoose.Types.ObjectId(idStr));
+      const uniqueItems = dedupeObjectIds(guestCart.items);
 
       guestCart.user = userId;
       guestCart.guestId = undefined;
       guestCart.items = uniqueItems;
 
       await guestCart.save();
+      migratedCart = guestCart;
     }
 
-    // Clean up guest cart
-    await Cart.deleteOne({ guestId });
-
-    return sendSuccess(res, "Guest cart migrated successfully");
+    return sendSuccess(res, "Guest cart migrated successfully", [migratedCart]);
   } catch (error) {
     console.error("Cart Migration Error:", error);
-    return sendError(res, error.message, 500);
+    return sendError(res, error.message || "Internal Server Error", 500);
   }
 };
 
