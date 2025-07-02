@@ -10,6 +10,9 @@ import productRoutes from "./routes/productRoutes.js";
 import authRoutes from "./routes/authRoutes.js";
 import wishlistRoutes from "./routes/wishlistRoutes.js";
 import cartRoutes from "./routes/cartRoutes.js";
+import paymentRoutes from "./routes/paymentRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
+import adminUserRoutes from "./routes/adminUserRoutes.js";
 
 const app = express();
 
@@ -34,6 +37,9 @@ app.use("/product", productRoutes);
 app.use("/auth", authRoutes);
 app.use("/wishlist", wishlistRoutes);
 app.use("/cart", cartRoutes);
+app.use("/payment", paymentRoutes);
+app.use("/user", userRoutes);
+app.use("/admin/users", adminUserRoutes);
 
 app.get("/", (req, res) => {
   res.send("Seamless's backend is up and running!");

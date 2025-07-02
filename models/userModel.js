@@ -1,12 +1,21 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
+const urlRegex = /^(https?:\/\/)[^\s$.?#].[^\s]*$/;
+
 const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
       required: [true, "Name is required"],
       trim: true,
+    },
+    username: {
+      type: String,
+      unique: true,
+      sparse: true,
+      trim: true,
+      lowercase: true,
     },
     email: {
       type: String,
@@ -21,7 +30,39 @@ const userSchema = new mongoose.Schema(
       minlength: 8,
       select: false,
     },
-    isVerified: { type: Boolean, default: false },
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
+    mobile: String,
+    image: {
+      url: {
+        type: String,
+        match: [urlRegex, "Image must be a valid URL"],
+      },
+      key: {
+        type: String,
+      },
+    },
+    purpose: String,
+    address: {
+      street1: String,
+      street2: String,
+      city: String,
+      state: String,
+      zip: String,
+      country: String,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    status: {
+      type: String,
+      enum: ["active", "suspended", "deleted"],
+      default: "active",
+    },
     otp: String,
     otpExpires: Date,
     resetToken: String,

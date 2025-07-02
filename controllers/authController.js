@@ -14,6 +14,7 @@ import { generateAndSendOtp } from "../utils/generateAndSendOtp.js";
 import { sendResetEmail } from "../utils/sendResetEmail.js";
 import { createResetToken } from "../utils/createResetToken.js";
 import CryptoJS from "crypto-js";
+import { generateUsername } from "../utils/generateUsername.js";
 
 dotenv.config();
 const secretKey = process.env.JWT_SECRET;
@@ -29,9 +30,11 @@ export const signup = async (req, res) => {
       return sendError(res, "Email already registered", 400);
     }
 
+    const username = await generateUsername(name);
     const newUser = await new User({
       name,
       email,
+      username,
       password,
       isVerified: false,
     }).save();
@@ -46,6 +49,7 @@ export const signup = async (req, res) => {
           id: newUser._id,
           name: newUser.name,
           email: newUser.email,
+          username: newUser.username,
           isVerified: newUser.isVerified,
         },
       }
