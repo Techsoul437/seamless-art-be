@@ -13,6 +13,7 @@ import cartRoutes from "./routes/cartRoutes.js";
 import paymentRoutes from "./routes/paymentRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminUserRoutes from "./routes/adminUserRoutes.js";
+import checkoutRoutes from "./routes/checkoutRoutes.js";
 
 const app = express();
 
@@ -40,6 +41,7 @@ app.use("/cart", cartRoutes);
 app.use("/payment", paymentRoutes);
 app.use("/user", userRoutes);
 app.use("/admin/users", adminUserRoutes);
+app.use("/checkout", checkoutRoutes);
 
 app.get("/", (req, res) => {
   res.send("Seamless's backend is up and running!");

@@ -1,12 +1,6 @@
 import * as yup from "yup";
 import mongoose from "mongoose";
 
-const isObjectId = (value) => mongoose.Types.ObjectId.isValid(value);
-
-const objectIdValidator = yup
-    .string()
-    .test("is-object-id", "Invalid ID", isObjectId);
-
 export const createWishlistSchema = yup.object({
     name: yup
         .string()

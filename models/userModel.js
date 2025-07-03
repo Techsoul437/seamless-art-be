@@ -1,8 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
-const urlRegex = /^(https?:\/\/)[^\s$.?#].[^\s]*$/;
-
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -39,7 +37,6 @@ const userSchema = new mongoose.Schema(
     image: {
       url: {
         type: String,
-        match: [urlRegex, "Image must be a valid URL"],
       },
       key: {
         type: String,
