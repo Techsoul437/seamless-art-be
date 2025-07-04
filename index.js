@@ -49,17 +49,34 @@ app.get("/", (req, res) => {
   res.send("Seamless's backend is up and running!");
 });
 
-mongoose
-  .connect(MONGOURL)
-  .then(() => {
-    console.log("✅ Database Connected Successfully");
-    app.listen(PORT, () => {
-      console.log(`🚀 Server is running on port ${PORT}`);
-    });
-  })
-  .catch((err) => {
-    console.error("❌ Database Connection Error:", err);
-    process.exit(1);
-  });
+let isConnected = false;
 
-export default app;
+export default async function handler(req, res) {
+  if (!isConnected) {
+    try {
+      await mongoose.connect(MONGOURL);
+      isConnected = true;
+      console.log("✅ Database Connected");
+    } catch (err) {
+      console.error("❌ MongoDB connection error:", err);
+      return res.status(500).send("Database connection failed");
+    }
+  }
+
+  return app(req, res); 
+}
+
+// mongoose
+//   .connect(MONGOURL)
+//   .then(() => {
+//     console.log("✅ Database Connected Successfully");
+//     app.listen(PORT, () => {
+//       console.log(`🚀 Server is running on port ${PORT}`);
+//     });
+//   })
+//   .catch((err) => {
+//     console.error("❌ Database Connection Error:", err);
+//     process.exit(1);
+//   });
+
+// export default app;
