@@ -15,6 +15,8 @@ import userRoutes from "./routes/userRoutes.js";
 import adminUserRoutes from "./routes/adminUserRoutes.js";
 import checkoutRoutes from "./routes/checkoutRoutes.js";
 
+dotenv.config();
+
 const app = express();
 
 app.use(bodyParser.json());
@@ -25,7 +27,7 @@ app.use(
   })
 );
 app.use(express.urlencoded({ extended: false }));
-dotenv.config();
+
 const PORT = process.env.PORT || 8000;
 const MONGOURL =
   process.env.MONGO_URL ||
