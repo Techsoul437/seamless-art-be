@@ -178,3 +178,33 @@ export const removeFromCart = async (req, res) => {
     return sendError(res, error.message || "Failed to remove product", 500);
   }
 };
+
+export const emptyCart = async (req, res) => {
+  try {
+    const isGuest = !req.user;
+    const guestId = req.query.guestId;
+    const userId = req.user?.userId;
+
+    const filter = isGuest ? { guestId } : { user: userId };
+
+    if (isGuest && !guestId) {
+      return sendError(res, "guestId is required for guests", 400);
+    }
+    if (!isGuest && !userId) {
+      return sendError(res, "User not authenticated", 401);
+    }
+
+    const cart = await Cart.findOne(filter);
+    if (!cart) {
+      return sendSuccess(res, "Cart already empty or does not exist", null);
+    }
+
+    cart.items = [];
+    await cart.save();
+
+    return sendSuccess(res, "Cart emptied successfully", cart);
+  } catch (error) {
+    console.error("emptyCart error:", error);
+    return sendError(res, error.message || "Failed to empty cart", 500);
+  }
+};

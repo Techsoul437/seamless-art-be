@@ -1,7 +1,6 @@
 import * as Yup from "yup";
 
 export const checkoutValidationSchema = Yup.object().shape({
-  guestId: Yup.string().required("Guest ID is required"),
   name: Yup.string().trim().required("Name is required"),
   email: Yup.string().email("Invalid email").required("Email is required"),
   phone: Yup.string()
