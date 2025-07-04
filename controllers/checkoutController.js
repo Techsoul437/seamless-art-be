@@ -1,4 +1,4 @@
-import Checkout from "../models/CheckoutModel.js";
+import Checkout from "../models/checkoutModel.js";
 import Product from "../models/productModel.js";
 import { sendError, sendSuccess } from "../utils/responseHelper.js";
 import { checkoutValidationSchema } from "../validations/checkoutValidation.js";
