@@ -6,7 +6,7 @@ export const checkoutValidationSchema = Yup.object().shape({
   phone: Yup.string()
     .nullable()
     .notRequired()
-    .test("is-valid-phone", "Invalid phone", function (value) {
+    .test("is-valid-phone", "Invalid phone", (value) => {
       if (!value || value.trim() === "") return true;
       return /^\+?[0-9\s-]{7,15}$/.test(value);
     }),
@@ -18,8 +18,22 @@ export const checkoutValidationSchema = Yup.object().shape({
     zip: Yup.string().required("ZIP/Postcode is required"),
     country: Yup.string().required("Country is required"),
   }),
-  productId: Yup.array()
-    .of(Yup.string().matches(/^[0-9a-fA-F]{24}$/, "Invalid product ID"))
-    .min(1, "At least one product must be selected")
-    .required("Product IDs are required"),
+//  products: Yup.array()
+//     .of(
+//       Yup.object().shape({
+//         productId: Yup.string()
+//           .matches(/^[0-9a-fA-F]{24}$/, "Invalid product ID")
+//           .required("productId is required"),
+//         addedAt: Yup.date().required("addedAt is required"),
+//       })
+//     )
+//     .min(1, "At least one product must be selected")
+//     .required("Products are required"),
+  guestId: Yup.string()
+    .nullable()
+    .when("$isGuest", {
+      is: true,
+      then: (schema) => schema.required("guestId is required for guests"),
+      otherwise: (schema) => schema.strip(),
+    }),
 });

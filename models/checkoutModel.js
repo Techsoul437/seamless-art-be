@@ -1,12 +1,18 @@
 import mongoose from "mongoose";
 
+const productItemSchema = new mongoose.Schema(
+  {
+    productId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Product",
+      required: true,
+    },
+  },
+  { timestamps: true }
+);
+
 const checkoutSchema = new mongoose.Schema(
   {
-    guestId: {
-      type: String,
-      required: true,
-      index: true,
-    },
     name: {
       type: String,
       required: true,
@@ -49,7 +55,15 @@ const checkoutSchema = new mongoose.Schema(
         trim: true,
       },
     },
-   products: [{ type: mongoose.Schema.Types.ObjectId, ref: "Product" }],
+    products: [productItemSchema],
+    guestId: {
+      type: String,
+      required: function () {
+        // Required only if user is not logged in
+        return !this.user;
+      },
+    },
+    user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );

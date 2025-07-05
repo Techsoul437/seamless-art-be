@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import Checkout from "../models/checkoutModel.js";
 import Product from "../models/productModel.js";
 import { sendError, sendSuccess } from "../utils/responseHelper.js";
@@ -5,14 +6,12 @@ import { checkoutValidationSchema } from "../validations/checkoutValidation.js";
 
 export const saveCheckoutInfo = async (req, res) => {
   try {
-    console.log("req.body", req.body);
     const isGuest = !req.user;
-    const { productId, email, ...rest } = req.body;
+    const { name, email, phone, address, products, guestId } = req.body;
     const userId = req.user?.userId;
-    const guestId = req.body.guestId;
 
-    if (!Array.isArray(productId) || productId.length === 0) {
-      return sendError(res, "At least one product ID is required", 400);
+    if (!Array.isArray(products) || products.length === 0) {
+      return sendError(res, "At least one product is required", 400);
     }
     if (isGuest && !guestId) {
       return sendError(res, "guestId is required for guests", 400);
@@ -23,22 +22,26 @@ export const saveCheckoutInfo = async (req, res) => {
 
     await checkoutValidationSchema.validate(req.body);
 
-    const productsExist = await Product.find({ _id: { $in: productId } });
-    if (productsExist.length !== productId.length) {
+    const productIds = products.map((p) => p.productId);
+    const productsExist = await Product.find({ _id: { $in: productIds } });
+    if (productsExist.length !== productIds.length) {
       return sendError(res, "Some product IDs are invalid", 400);
     }
 
-    const filter = isGuest ? { guestId, email } : { user: userId };
-
+    const filter = isGuest ? { guestId, guestId } : { user: userId };
     let checkoutRecord = await Checkout.findOne(filter);
 
     if (checkoutRecord) {
-      const existingProductId = checkoutRecord.products.map((p) =>
-        p.toString()
+      const existingProductIds = new Set(
+        checkoutRecord.products.map((p) => p.productId.toString())
       );
-      const newProducts = productId.filter(
-        (pid) => !existingProductId.includes(pid)
-      );
+
+      const newProducts = products
+        .filter((p) => !existingProductIds.has(p.productId.toString()))
+        .map((p) => ({
+          productId: new mongoose.Types.ObjectId(p.productId),
+          addedAt: new Date(),
+        }));
 
       if (newProducts.length > 0) {
         checkoutRecord.products.push(...newProducts);
@@ -46,66 +49,30 @@ export const saveCheckoutInfo = async (req, res) => {
       }
 
       return sendSuccess(res, "Checkout updated", {
-        checkout: {
-          _id: checkoutRecord._id,
-          user: checkoutRecord.user,
-          guestId: checkoutRecord.guestId,
-          email: checkoutRecord.email,
-          products: checkoutRecord.products,
-        },
+        checkout: checkoutRecord,
       });
     }
 
-    const newCheckout = await Checkout.create({
-      ...rest,
-      products: productId,
-      ...(isGuest ? { guestId, email } : { user: userId }),
-    });
+    const newCheckoutData = {
+      name,
+      email,
+      phone,
+      address,
+      products,
+    };
 
-    return sendSuccess(res, "Checkout saved", {
-      checkout: {
-        _id: newCheckout._id,
-        user: newCheckout.user,
-        guestId: newCheckout.guestId,
-        email: newCheckout.email,
-        products: newCheckout.products,
-      },
-    });
+    if (isGuest) {
+      newCheckoutData.guestId = guestId;
+    } else {
+      newCheckoutData.user = userId;
+    }
+
+    const newCheckout = await Checkout.create(newCheckoutData);
+
+    return sendSuccess(res, "Checkout saved", { checkout: newCheckout });
   } catch (error) {
     console.error("Guest Checkout Save Error:", error);
     return sendError(res, "Internal error while saving ckeckout info", 500);
-  }
-};
-
-export const getOrder = async (req, res) => {
-  try {
-    const isGuest = !req.user;
-    const guestId = req.query.guestId;
-    const userId = req.user?.userId;
-
-    if (isGuest && !guestId) {
-      return sendError(res, "guestId is required for guests", 400);
-    }
-
-    if (!isGuest && !userId) {
-      return sendError(res, "User not authenticated", 401);
-    }
-
-    const filter = isGuest ? { guestId } : { user: userId };
-
-    const guestCheckout = await Checkout.findOne(filter).populate("products");
-
-    if (!guestCheckout) {
-      return sendError(res, "Checkout not found", 404);
-    }
-
-    return sendSuccess(res, "Purchased products fetched", {
-      id: isGuest ? guestCheckout.guestId : guestCheckout.user,
-      products: guestCheckout.products,
-    });
-  } catch (error) {
-    console.error("getPurchasedProducts error:", error);
-    return sendError(res, "Internal error while fetching products", 500);
   }
 };
 

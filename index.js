@@ -14,6 +14,7 @@ import paymentRoutes from "./routes/paymentRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import adminUserRoutes from "./routes/adminUserRoutes.js";
 import checkoutRoutes from "./routes/checkoutRoutes.js";
+import orderRoutes from "./routes/orderRoutes.js";
 
 dotenv.config();
 
@@ -44,6 +45,7 @@ app.use("/payment", paymentRoutes);
 app.use("/user", userRoutes);
 app.use("/admin/users", adminUserRoutes);
 app.use("/checkout", checkoutRoutes);
+app.use("/order", orderRoutes);
 
 app.get("/", (req, res) => {
   res.send("Seamless's backend is up and running!");
