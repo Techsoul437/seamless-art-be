@@ -3,6 +3,8 @@ import Checkout from "../models/checkoutModel.js";
 import Product from "../models/productModel.js";
 import { sendError, sendSuccess } from "../utils/responseHelper.js";
 import { checkoutValidationSchema } from "../validations/checkoutValidation.js";
+import { sendPatternDownloadEmail } from "../utils/sendPatternEmail.js";
+import { generateSignedDownloadUrl } from "../services/s3Service.js";
 
 export const saveCheckoutInfo = async (req, res) => {
   try {
@@ -24,6 +26,7 @@ export const saveCheckoutInfo = async (req, res) => {
 
     const productIds = products.map((p) => p.productId);
     const productsExist = await Product.find({ _id: { $in: productIds } });
+
     if (productsExist.length !== productIds.length) {
       return sendError(res, "Some product IDs are invalid", 400);
     }
@@ -32,23 +35,18 @@ export const saveCheckoutInfo = async (req, res) => {
     let checkoutRecord = await Checkout.findOne(filter);
 
     if (checkoutRecord) {
-      const existingProductIds = new Set(
-        checkoutRecord.products.map((p) => p.productId.toString())
-      );
+      const repeatedPurchaseProducts = products.map((p) => ({
+        productId: new mongoose.Types.ObjectId(p.productId),
+        paymentId: p.paymentId,
+        amount: p.amount,
+        clientSecret: p.clientSecret,
+        addedAt: new Date(),
+      }));
 
-      const newProducts = products
-        .filter((p) => !existingProductIds.has(p.productId.toString()))
-        .map((p) => ({
-          productId: new mongoose.Types.ObjectId(p.productId),
-          addedAt: new Date(),
-        }));
+      checkoutRecord.products.push(...repeatedPurchaseProducts);
+      await checkoutRecord.save();
 
-      if (newProducts.length > 0) {
-        checkoutRecord.products.push(...newProducts);
-        await checkoutRecord.save();
-      }
-
-      return sendSuccess(res, "Checkout updated", {
+      return sendSuccess(res, `Your order has been confirmed. The pattern file(s) have been delivered to your email - ${email}.`, {
         checkout: checkoutRecord,
       });
     }
@@ -68,6 +66,19 @@ export const saveCheckoutInfo = async (req, res) => {
     }
 
     const newCheckout = await Checkout.create(newCheckoutData);
+
+    const productDownloadDetails = await Promise.all(
+      productsExist.map(async (p) => {
+        return {
+          name: p.title,
+          imageUrl: p.image?.url,
+          downloadUrl: await generateSignedDownloadUrl(p.image?.key),
+          size: p.size,
+        };
+      })
+    );
+
+    await sendPatternDownloadEmail(email, productDownloadDetails);
 
     return sendSuccess(res, "Checkout saved", { checkout: newCheckout });
   } catch (error) {
@@ -96,19 +107,34 @@ export const getPurchasedProducts = async (req, res) => {
 
     const filter = isGuest ? { guestId } : { user: userId };
 
-    const checkout = await Checkout.findOne(filter).populate("products");
+    const checkout = await Checkout.findOne(filter).populate(
+      "products.productId"
+    );
 
     if (!checkout) {
       return sendError(res, "Checkout not found", 404);
     }
 
-    const filteredProducts = checkout.products.filter((product) =>
-      productId.includes(product._id.toString())
-    );
+    const latestProductsMap = new Map();
 
+    for (const product of checkout.products) {
+      const pid = product.productId?._id?.toString();
+      if (!productId.includes(pid)) continue;
+
+      const existing = latestProductsMap.get(pid);
+
+      if (
+        !existing ||
+        new Date(product.createdAt) > new Date(existing.createdAt)
+      ) {
+        latestProductsMap.set(pid, product);
+      }
+    }
+
+    const latestProducts = Array.from(latestProductsMap.values());
     return sendSuccess(res, "Purchased products fetched", {
       id: isGuest ? checkout.guestId : checkout.user,
-      products: filteredProducts,
+      products: latestProducts.map((item) => item.productId), 
     });
   } catch (error) {
     console.error("getPurchasedProducts error:", error);

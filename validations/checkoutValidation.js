@@ -18,17 +18,16 @@ export const checkoutValidationSchema = Yup.object().shape({
     zip: Yup.string().required("ZIP/Postcode is required"),
     country: Yup.string().required("Country is required"),
   }),
-//  products: Yup.array()
-//     .of(
-//       Yup.object().shape({
-//         productId: Yup.string()
-//           .matches(/^[0-9a-fA-F]{24}$/, "Invalid product ID")
-//           .required("productId is required"),
-//         addedAt: Yup.date().required("addedAt is required"),
-//       })
-//     )
-//     .min(1, "At least one product must be selected")
-//     .required("Products are required"),
+  products: Yup.array()
+    .of(
+      Yup.object().shape({
+        productId: Yup.string()
+          .matches(/^[0-9a-fA-F]{24}$/, "Invalid product ID")
+          .required("productId is required"),
+      })
+    )
+    .min(1, "At least one product must be added")
+    .required("Products are required"),
   guestId: Yup.string()
     .nullable()
     .when("$isGuest", {

@@ -1,4 +1,4 @@
-import { uploadToS3, updateS3Image, deleteFromS3 } from "../services/s3Service.js";
+import { uploadToS3, updateS3Image, deleteFromS3, generateSignedDownloadUrl } from "../services/s3Service.js";
 import { sendSuccess, sendError } from "../utils/responseHelper.js";
 
 export const uploadSingle = async (req, res) => {
@@ -87,5 +87,25 @@ export const updateImage = async (req, res) => {
   } catch (error) {
     console.error("Update Image Error:", error);
     return sendError(res, "Failed to update image", 500, error);
+  }
+};
+
+export const downloadImage = async (req, res) => {
+  try {
+    const key = req.query.key;
+
+    if (!key)
+      return sendError(
+        res,
+        "key is required for download",
+        400
+      );
+
+    const result = await generateSignedDownloadUrl(key);
+
+    return sendSuccess(res, "Pattern Downloaded successfully", result);
+  } catch (error) {
+    console.error("Download Pattern Error:", error);
+    return sendError(res, "Failed to Download Pattern", 500, error);
   }
 };

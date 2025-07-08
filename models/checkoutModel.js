@@ -7,6 +7,9 @@ const productItemSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
+    paymentId: { type: String, required: true },
+    amount: { type: Number, required: true },
+    clientSecret: { type: String, required: true },
   },
   { timestamps: true }
 );

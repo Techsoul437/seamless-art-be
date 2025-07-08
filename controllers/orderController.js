@@ -17,10 +17,15 @@ export const getOrder = async (req, res) => {
 
     const filter = isGuest ? { guestId } : { user: userId };
 
-    const guestCheckout = await Checkout.findOne(filter).populate("products.productId");
+    const guestCheckout = await Checkout.findOne(filter).populate(
+      "products.productId"
+    );
 
     if (!guestCheckout) {
-      return sendError(res, "Checkout not found", 404);
+      return sendSuccess(res, "No purchased products found", {
+        id: isGuest ? guestId : userId,
+        products: [],
+      });
     }
 
     return sendSuccess(res, "Purchased products fetched", {
@@ -36,65 +41,73 @@ export const getOrder = async (req, res) => {
 export const migrateGuestOrders = async (req, res) => {
   try {
     const userId = req.user?.userId;
+    const userEmail = req.user?.email;
     const { guestId } = req.body;
+    console.log("guestId", guestId);
+
+    console.log("req.user", req.user);
 
     if (!userId) return sendError(res, "User not authenticated", 401);
     if (!guestId) return sendError(res, "guestId is required", 400);
 
-    // 1. Fetch all existing user orders
-    const userOrders = await Checkout.find({ user: userId });
-    const userProductIds = new Set(
-      userOrders.flatMap((order) =>
-        order.products.map((p) => p?.toString?.() || p._id?.toString?.())
-      )
-    );
-
-    // 2. Get guest orders that are not already linked to a user
-    const guestOrders = await Checkout.find({
+    const guestOrder = await Checkout.findOne({
       guestId,
       user: { $exists: false },
     });
-    console.log('guestOrders', guestOrders);
+    console.log("guestOrder", guestOrder);
 
-    if (!guestOrders.length) {
+    if (!guestOrder) {
       return sendSuccess(res, "No guest orders found", []);
     }
 
-    const migratedOrders = [];
-
-    for (const order of guestOrders) {
-        console.log('order', order);
-      // 3. Filter out already ordered products
-      const newProducts = order.products.filter(
-        (p) => !userProductIds.has(p?.toString?.() || p._id?.toString?.())
+    if (guestOrder.email !== userEmail) {
+      return sendError(
+        res,
+        "Guest order email does not match logged-in user",
+        403
       );
-      console.log('newProducts', newProducts);
-
-      if (newProducts.length === 0) {
-        // Optional: delete order if it's all duplicates
-        await order.deleteOne();
-        continue;
-      }
-
-      // 4. Update order
-      order.user = userId;
-      order.guestId = undefined;
-      order.products = newProducts;
-      await order.save();
-
-      // 5. Add new products to the set so future checks remain accurate
-      newProducts.forEach((p) =>
-        userProductIds.add(p?.toString?.() || p._id?.toString?.())
-      );
-
-      migratedOrders.push(order);
     }
 
-    return sendSuccess(
-      res,
-      "Guest orders migrated successfully",
-      migratedOrders
-    );
+    let migratedOrder;
+    const userOrder = await Checkout.findOne({ user: userId });
+    console.log("userOrder", userOrder);
+
+    if (userOrder) {
+      const existingProductIds = new Set(
+        userOrder.products.map((p) => p.productId.toString())
+      );
+      console.log("existingProductIds", existingProductIds);
+
+      const newProducts = guestOrder.products.filter(
+        (p) => !existingProductIds.has(p.productId.toString())
+      );
+      console.log("newProducts", newProducts);
+
+      const allProducts = [...userOrder.products, ...newProducts];
+      console.log("allProducts", allProducts);
+
+      const dedupedProducts = Array.from(
+        new Map(allProducts.map((p) => [p.productId.toString(), p])).values()
+      );
+      console.log("dedupedProducts", dedupedProducts);
+
+      userOrder.products = dedupedProducts;
+      await userOrder.save();
+
+      migratedOrder = userOrder;
+
+      await guestOrder.deleteOne();
+    } else {
+      guestOrder.user = userId;
+      guestOrder.guestId = undefined;
+      await guestOrder.save();
+
+      migratedOrder = guestOrder;
+    }
+
+    return sendSuccess(res, "Guest order migrated successfully", [
+      migratedOrder,
+    ]);
   } catch (error) {
     console.error("Order Migration Error:", error);
     return sendError(res, error.message || "Order migration failed", 500);

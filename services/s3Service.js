@@ -2,10 +2,12 @@ import {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
 import dotenv from "dotenv";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 dotenv.config();
 
 const s3 = new S3Client({
@@ -55,4 +57,18 @@ export const deleteFromS3 = async (key) => {
 export const updateS3Image = async (oldKey, newFile, folder) => {
   await deleteFromS3(oldKey);
   return await uploadToS3(newFile, folder);
+};
+
+export const generateSignedDownloadUrl = async (key) => {
+  if (!key) throw new Error("S3 key is required for download");
+
+  const command = new GetObjectCommand({
+    Bucket,
+    Key: key,
+    ResponseContentDisposition: "attachment", 
+  });
+
+  const signedUrl = await getSignedUrl(s3, command, { expiresIn: 600 }); 
+
+  return signedUrl;
 };
