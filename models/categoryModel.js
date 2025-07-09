@@ -21,6 +21,14 @@ const categorySchema = new mongoose.Schema(
         required: true,
       },
     },
+    discount: {
+      type: Number,
+      default: 0,
+      validate: {
+        validator: (v) => v >= 0,
+        message: "Discount must be a non-negative number",
+      },
+    },
   },
   { timestamps: true }
 );

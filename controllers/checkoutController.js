@@ -80,7 +80,7 @@ export const saveCheckoutInfo = async (req, res) => {
 
     await sendPatternDownloadEmail(email, productDownloadDetails);
 
-    return sendSuccess(res, "Checkout saved", { checkout: newCheckout });
+    return sendSuccess(res, `Your order has been confirmed. The pattern file(s) have been delivered to your email - ${email}.`, { checkout: newCheckout });
   } catch (error) {
     console.error("Guest Checkout Save Error:", error);
     return sendError(res, "Internal error while saving ckeckout info", 500);

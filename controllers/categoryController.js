@@ -1,4 +1,5 @@
 import Category from "../models/categoryModel.js";
+import Product from "../models/productModel.js";
 import { sendSuccess, sendError } from "../utils/responseHelper.js";
 import { categoryValidationSchema } from "../validations/categoryValidation.js";
 
@@ -6,12 +7,26 @@ export const addCategory = async (req, res) => {
   try {
     await categoryValidationSchema.validate(req.body);
 
-    const { name, image } = req.body;
+    const { name, image, discount = 0 } = req.body;
 
     const exists = await Category.findOne({ name });
     if (exists) return sendError(res, "Category already exists", 400);
 
-    const newCategory = await Category.create(req.body);
+    const newCategory = await Category.create({ name, image, discount });
+
+    if (discount > 0) {
+      const products = await Product.find({ categories: name });
+
+      for (const product of products) {
+        const original = parseFloat(product.originalPrice);
+        if (!isNaN(original) && original >= 0) {
+          const discountedPrice = original - (original * discount) / 100;
+          product.price = discountedPrice.toFixed(2);
+          await product.save();
+        }
+      }
+    }
+
     return sendSuccess(res, "Category created successfully", newCategory);
   } catch (error) {
     return sendError(res, error.message, 500);
@@ -62,14 +77,14 @@ export const updateCategory = async (req, res) => {
     await categoryValidationSchema.validate(req.body);
 
     const { id } = req.params;
-    const { name, image } = req.body;
+    const { name, image, discount } = req.body;
 
-    if (!id) return sendError(res, "Id not found", 404);
+    if (!id) return sendError(res, "Category Id not found", 404);
 
     const category = await Category.findById(id);
     if (!category) return sendError(res, "Category not found", 404);
 
-    if (name && name !== product.name) {
+    if (name && name !== category.name) {
       const isExist = await Category.findOne({
         name,
         _id: { $ne: id },
@@ -79,12 +94,25 @@ export const updateCategory = async (req, res) => {
       }
     }
 
-    const updated = await Category.findByIdAndUpdate(id, req.body, {
+    const updatedCategory = await Category.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
     });
 
-    return sendSuccess(res, "Category updated successfully", updated);
+    if (discount >= 0) {
+      const products = await Product.find({ categories: category.name });
+
+      for (const product of products) {
+        const original = parseFloat(product.originalPrice);
+        if (!isNaN(original)) {
+          const discountedPrice = original - (original * discount) / 100;
+          product.price = discountedPrice.toFixed(2);
+          await product.save();
+        }
+      }
+    }
+
+    return sendSuccess(res, "Category updated successfully", updatedCategory);
   } catch (error) {
     return sendError(res, error.message, 400);
   }

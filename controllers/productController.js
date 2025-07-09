@@ -1,4 +1,5 @@
 import Product from "../models/productModel.js";
+import Category from "../models/categoryModel.js";
 import { sendError, sendSuccess } from "../utils/responseHelper.js";
 import { productValidationSchema } from "../validations/productValidation.js";
 
@@ -6,13 +7,64 @@ export const addProduct = async (req, res) => {
   try {
     await productValidationSchema.validate(req.body);
 
-    const { slug } = req.body;
+    const {
+      title,
+      subTitle,
+      description,
+      originalPrice,
+      image,
+      mockupFiles,
+      color,
+      includedFiles,
+      fileSizes,
+      type,
+      categories,
+      tags,
+      slug,
+      premium,
+    } = req.body;
 
     const exists = await Product.findOne({ slug });
     if (exists)
       return sendError(res, "Product with this slug already exists", 400);
 
-    const newProduct = await Product.create(req.body);
+    const parsedOriginal = parseFloat(originalPrice);
+    if (isNaN(parsedOriginal) || parsedOriginal < 0) {
+      return sendError(
+        res,
+        "Original price must be a valid non-negative number",
+        400
+      );
+    }
+
+    const categoryDocs = await Category.find({ name: { $in: categories } });
+    const maxDiscount = Math.max(
+      ...categoryDocs.map((cat) => cat.discount || 0)
+    );
+
+    const finalPrice =
+      maxDiscount > 0
+        ? (parsedOriginal - (parsedOriginal * maxDiscount) / 100).toFixed(2)
+        : parsedOriginal.toFixed(2);
+
+    const newProduct = await Product.create({
+      title,
+      subTitle,
+      description,
+      originalPrice: parsedOriginal.toFixed(2),
+      price: finalPrice,
+      image,
+      mockupFiles,
+      color,
+      includedFiles,
+      fileSizes,
+      type,
+      categories,
+      tags,
+      slug,
+      premium,
+    });
+
     return sendSuccess(res, "Product created successfully", newProduct);
   } catch (error) {
     return sendError(res, error.message, 500);
@@ -147,12 +199,12 @@ export const updateProduct = async (req, res) => {
     const { id } = req.params;
     if (!id) return sendError(res, "Product ID not provided", 404);
 
-    const product = await Product.findById(id);
-    if (!product) return sendError(res, "Product not found", 404);
+    const existingProduct = await Product.findById(id);
+    if (!existingProduct) return sendError(res, "Product not found", 404);
 
     const { title, slug } = req.body;
 
-    if (title && title !== product.title) {
+    if (title && title !== existingProduct.title) {
       const isExist = await Product.findOne({
         title,
         _id: { $ne: id },
@@ -162,8 +214,8 @@ export const updateProduct = async (req, res) => {
       }
     }
 
-    if (slug && slug !== product.slug) {
-      const isExist = await Product.findOne({
+    if (slug && slug !== existingProduct.slug) {
+      const isExist = await existingProduct.findOne({
         slug,
         _id: { $ne: id },
       });
@@ -171,6 +223,31 @@ export const updateProduct = async (req, res) => {
         return sendError(res, "Product with this slug already exists", 400);
       }
     }
+
+    let originalPrice = req.body.originalPrice ?? existingProduct.originalPrice;
+    const categories = req.body.categories ?? existingProduct.categories;
+
+    const parsedOriginal = parseFloat(originalPrice);
+    if (isNaN(parsedOriginal) || parsedOriginal < 0) {
+      return sendError(
+        res,
+        "Original price must be a valid non-negative number",
+        400
+      );
+    }
+
+    const categoryDocs = await Category.find({ name: { $in: categories } });
+    const maxDiscount = Math.max(
+      ...categoryDocs.map((cat) => cat.discount || 0)
+    );
+
+    const finalPrice =
+      maxDiscount > 0
+        ? (parsedOriginal - (parsedOriginal * maxDiscount) / 100).toFixed(2)
+        : parsedOriginal.toFixed(2);
+
+    req.body.price = finalPrice;
+    req.body.originalPrice = parsedOriginal.toFixed(2);
 
     const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
       new: true,

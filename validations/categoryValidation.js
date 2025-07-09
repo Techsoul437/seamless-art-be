@@ -16,4 +16,7 @@ export const categoryValidationSchema = yup.object({
        key: yup.string().trim().required("Image key is required"),
      })
      .required("Product image is required"),
+  discount: yup.number()
+    .min(0, "Discount must be a non-negative number")
+    .optional(),
 });
