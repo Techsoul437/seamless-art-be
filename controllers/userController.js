@@ -152,7 +152,7 @@ export const updateUserById = async (req, res) => {
       };
     }
 
-    if (status && ["active", "suspended", "deleted"].includes(status)) {
+    if (status && ["active", "suspended"].includes(status)) {
       user.status = status;
     }
 
@@ -174,26 +174,5 @@ export const updateUserById = async (req, res) => {
       "Unable to update user. Please try again later.",
       500
     );
-  }
-};
-
-// DELETE /admin/users/:id (admin only)
-export const deleteUser = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    if (!id || !isValidObjectId(id)) {
-      return sendError(res, "Invalid user ID.", 400);
-    }
-
-    const user = await User.findByIdAndDelete(id);
-    if (!user) {
-      return sendError(res, "User not found or already deleted", 404);
-    }
-
-    return sendSuccess(res, "User account deleted permanently.");
-  } catch (error) {
-    console.error("Delete User Error:", error);
-    return sendError(res, "Failed to delete user. Please try again.", 500);
   }
 };

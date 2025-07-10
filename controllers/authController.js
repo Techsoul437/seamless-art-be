@@ -128,6 +128,14 @@ export const signin = async (req, res) => {
       );
     }
 
+    if (user.status === "suspended") {
+      return sendError(
+        res,
+        "Your account has been suspended. Contact support.",
+        403
+      );
+    }
+
     const token = jwt.sign({ userId: user._id, email: user.email }, secretKey, {
       expiresIn: "7d",
     });
