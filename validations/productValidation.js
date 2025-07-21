@@ -44,7 +44,18 @@ export const productValidationSchema = yup.object({
         value !== undefined && !isNaN(Number(value)) && Number(value) >= 0
     ),
 
-  image: yup
+  previewImage: yup
+    .object({
+      url: yup
+        .string()
+        .trim()
+        .url("Image must be a valid URL")
+        .required("Image URL is required"),
+      key: yup.string().trim().required("Image key is required"),
+    })
+    .required("Product image is required"),
+    
+  originalImage: yup
     .object({
       url: yup
         .string()

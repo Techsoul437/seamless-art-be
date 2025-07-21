@@ -50,11 +50,22 @@ const productSchema = new mongoose.Schema(
         message: "Price must be a non-negative number",
       },
     },
-    image: {
+    previewImage: {
       url: {
         type: String,
         required: true,
-        match: [urlRegex, "Image must be a valid URL"],
+        match: [urlRegex, "Preview Image must be a valid URL"],
+      },
+      key: {
+        type: String,
+        required: true,
+      },
+    },
+    originalImage: {
+      url: {
+        type: String,
+        required: true,
+        match: [urlRegex, "Original Image must be a valid URL"],
       },
       key: {
         type: String,
