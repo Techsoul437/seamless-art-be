@@ -28,7 +28,7 @@ export const sendPatternDownloadEmail = async (email, products = []) => {
                 p.name
               }</h3>
               <p style="margin: 4px 0 8px; font-size: 14px; color: #555;">
-                Size: ${p.size || "3780 x 3780 px"}
+                Size: 3780 x 3780 px
               </p>
               <a href="${
                 p.downloadUrl

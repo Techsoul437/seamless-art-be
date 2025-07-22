@@ -26,6 +26,7 @@ export const saveCheckoutInfo = async (req, res) => {
 
     const productIds = products.map((p) => p.productId);
     const productsExist = await Product.find({ _id: { $in: productIds } });
+    console.log('productsExist', productsExist);
 
     if (productsExist.length !== productIds.length) {
       return sendError(res, "Some product IDs are invalid", 400);
@@ -71,12 +72,12 @@ export const saveCheckoutInfo = async (req, res) => {
       productsExist.map(async (p) => {
         return {
           name: p.title,
-          imageUrl: p.image?.url,
-          downloadUrl: await generateSignedDownloadUrl(p.image?.key),
-          size: p.size,
+          imageUrl: p.originalImage?.url,
+          downloadUrl: await generateSignedDownloadUrl(p.originalImage?.key)
         };
       })
     );
+    console.log('productDownloadDetails', productDownloadDetails);
 
     await sendPatternDownloadEmail(email, productDownloadDetails);
 
