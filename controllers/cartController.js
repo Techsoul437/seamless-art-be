@@ -14,7 +14,7 @@ const dedupeObjectIds = (ids) => {
 
 export const migrateGuestCart = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
     const { guestId } = req.body;
 
     if (!userId) return sendError(res, "User not authenticated", 401);
@@ -68,7 +68,7 @@ export const migrateGuestCart = async (req, res) => {
 export const addToCart = async (req, res) => {
   try {
     const { productId, guestId } = req.body;
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
 
     if (!guestId) return sendError(res, "Guest ID is required", 400);
     if (!productId)
@@ -101,7 +101,7 @@ export const addToCart = async (req, res) => {
 
 export const getCart = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
     const guestId = req.params?.id;
 
     let filter;
@@ -134,7 +134,7 @@ export const removeFromCart = async (req, res) => {
     const isGuest = !req.user;
     const { productId } = req.body;
     const guestId = req.query.guestId;
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
 
     if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
       return sendError(res, "Valid productId is required", 400);
@@ -183,7 +183,7 @@ export const emptyCart = async (req, res) => {
   try {
     const isGuest = !req.user;
     const guestId = req.query.guestId;
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
 
     const filter = isGuest ? { guestId } : { user: userId };
 

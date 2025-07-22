@@ -28,8 +28,8 @@ export const createWishlist = async (req, res) => {
       wishlistData.guestId = guestId;
       wishlistData.expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     } else {
-      filter = { user: req.user.userId, name };
-      wishlistData.user = req.user.userId;
+      filter = { user: req.user._id, name };
+      wishlistData.user = req.user._id;
     }
 
     const exists = await Wishlist.findOne(filter);
@@ -55,7 +55,7 @@ export const getWishlists = async (req, res) => {
       if (!guestId) return sendError(res, "guestId is required", 400);
       filter = { guestId };
     } else {
-      filter = { user: req.user.userId };
+      filter = { user: req.user._id };
     }
 
     const wishlists = await Wishlist.find(filter).populate("products");
@@ -82,7 +82,7 @@ export const getWishlistById = async (req, res) => {
         return sendError(res, "Unauthorized guest access", 403);
       }
     } else {
-      if (!req.user?.userId || String(wishlist.user) !== String(req.user.userId)) {
+      if (!req.user?.userId || String(wishlist.user) !== String(req.user._id)) {
         return sendError(res, "Unauthorized user access", 403);
       }
     }
@@ -112,7 +112,7 @@ export const addProductToWishlist = async (req, res) => {
         return sendError(res, "Unauthorized guest access", 403);
       }
     } else {
-      if (String(wishlist.user) !== String(req.user.userId)) {
+      if (String(wishlist.user) !== String(req.user._id)) {
         return sendError(res, "Unauthorized user access", 403);
       }
     }
@@ -146,7 +146,7 @@ export const deleteWishlist = async (req, res) => {
         return sendError(res, "Unauthorized guest access", 403);
       }
     } else {
-      if (String(wishlist.user) !== String(req.user.userId)) {
+      if (String(wishlist.user) !== String(req.user._id)) {
         return sendError(res, "Unauthorized user access", 403);
       }
     }
@@ -180,7 +180,7 @@ export const removeProductFromWishlist = async (req, res) => {
         return sendError(res, "Unauthorized guest access", 403);
       }
     } else {
-      if (String(wishlist.user) !== String(req.user.userId)) {
+      if (String(wishlist.user) !== String(req.user._id)) {
         return sendError(res, "Unauthorized user access", 403);
       }
     }
@@ -209,7 +209,7 @@ export const removeProductFromWishlist = async (req, res) => {
 
 export const migrateGuestWishlist = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
     const { guestId } = req.body;
 
     if (!userId) return sendError(res, "User not authenticated", 401);

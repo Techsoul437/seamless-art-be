@@ -15,8 +15,10 @@ export const createPaymentIntent = async (req, res) => {
       return res.status(400).json({ error: "Amount is required" });
     }
 
+    const stripeAmount = Math.round(amount * 100);
+
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
+      amount: stripeAmount,
       currency: "usd",
       automatic_payment_methods: {
         enabled: true,

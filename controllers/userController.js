@@ -11,10 +11,10 @@ const sanitizeUser = (user) => {
 // GET /users/profile (private)
 export const getProfile = async (req, res) => {
   try {
-    if (!req.user?.userId)
+    if (!req.user?._id)
       return sendError(res, "Access denied. Please login first.", 401);
 
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.user._id);
     if (!user)
       return sendError(res, "Profile not found. Please try again later.", 404);
 
@@ -32,7 +32,7 @@ export const updateProfile = async (req, res) => {
   try {
     if (!req.user?.userId) return sendError(res, "Unauthorized access", 401);
 
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.user._id);
     if (!user) return sendError(res, "User not found", 404);
 
     const { username, name, mobile, purpose, image, address } = req.body;
@@ -40,7 +40,7 @@ export const updateProfile = async (req, res) => {
     if (username && username !== user.username) {
       const existing = await User.findOne({
         username,
-        _id: { $ne: user.userId },
+        _id: { $ne: user._id },
       });
       if (existing)
         return sendError(

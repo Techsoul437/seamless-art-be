@@ -10,7 +10,7 @@ export const saveCheckoutInfo = async (req, res) => {
   try {
     const isGuest = !req.user;
     const { name, email, phone, address, products, guestId } = req.body;
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
 
     if (!Array.isArray(products) || products.length === 0) {
       return sendError(res, "At least one product is required", 400);
@@ -26,13 +26,12 @@ export const saveCheckoutInfo = async (req, res) => {
 
     const productIds = products.map((p) => p.productId);
     const productsExist = await Product.find({ _id: { $in: productIds } });
-    console.log('productsExist', productsExist);
 
     if (productsExist.length !== productIds.length) {
       return sendError(res, "Some product IDs are invalid", 400);
     }
 
-    const filter = isGuest ? { guestId, guestId } : { user: userId };
+    const filter = isGuest ? { guestId, email } : { user: userId };
     let checkoutRecord = await Checkout.findOne(filter);
 
     if (checkoutRecord) {
@@ -47,9 +46,25 @@ export const saveCheckoutInfo = async (req, res) => {
       checkoutRecord.products.push(...repeatedPurchaseProducts);
       await checkoutRecord.save();
 
-      return sendSuccess(res, `Your order has been confirmed. The pattern file(s) have been delivered to your email - ${email}.`, {
-        checkout: checkoutRecord,
-      });
+      const productDownloadDetails = await Promise.all(
+        productsExist.map(async (p) => {
+          return {
+            name: p.title,
+            imageUrl: p.originalImage?.url,
+            downloadUrl: await generateSignedDownloadUrl(p.originalImage?.key),
+          };
+        })
+      );
+
+      await sendPatternDownloadEmail(email, productDownloadDetails);
+
+      return sendSuccess(
+        res,
+        `Your order has been confirmed. The pattern file(s) have been delivered to your email - ${email}.`,
+        {
+          checkout: checkoutRecord,
+        }
+      );
     }
 
     const newCheckoutData = {
@@ -73,15 +88,18 @@ export const saveCheckoutInfo = async (req, res) => {
         return {
           name: p.title,
           imageUrl: p.originalImage?.url,
-          downloadUrl: await generateSignedDownloadUrl(p.originalImage?.key)
+          downloadUrl: await generateSignedDownloadUrl(p.originalImage?.key),
         };
       })
     );
-    console.log('productDownloadDetails', productDownloadDetails);
 
     await sendPatternDownloadEmail(email, productDownloadDetails);
 
-    return sendSuccess(res, `Your order has been confirmed. The pattern file(s) have been delivered to your email - ${email}.`, { checkout: newCheckout });
+    return sendSuccess(
+      res,
+      `Your order has been confirmed. The pattern file(s) have been delivered to your email - ${email}.`,
+      { checkout: newCheckout }
+    );
   } catch (error) {
     console.error("Guest Checkout Save Error:", error);
     return sendError(res, "Internal error while saving ckeckout info", 500);
@@ -92,7 +110,7 @@ export const getPurchasedProducts = async (req, res) => {
   try {
     const isGuest = !req.user;
     const { guestId, productId } = req.body;
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
 
     if (isGuest && !guestId) {
       return sendError(res, "guestId is required for guests", 400);
@@ -135,7 +153,7 @@ export const getPurchasedProducts = async (req, res) => {
     const latestProducts = Array.from(latestProductsMap.values());
     return sendSuccess(res, "Purchased products fetched", {
       id: isGuest ? checkout.guestId : checkout.user,
-      products: latestProducts.map((item) => item.productId), 
+      products: latestProducts.map((item) => item.productId),
     });
   } catch (error) {
     console.error("getPurchasedProducts error:", error);

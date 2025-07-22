@@ -5,7 +5,7 @@ export const getOrder = async (req, res) => {
   try {
     const isGuest = !req.user;
     const guestId = req.query.guestId;
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
 
     if (isGuest && !guestId) {
       return sendError(res, "guestId is required for guests", 400);
@@ -40,7 +40,7 @@ export const getOrder = async (req, res) => {
 
 export const migrateGuestOrders = async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?._id;
     const userEmail = req.user?.email;
     const { guestId } = req.body;
     console.log("guestId", guestId);
