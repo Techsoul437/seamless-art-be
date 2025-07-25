@@ -30,7 +30,8 @@ export const getProfile = async (req, res) => {
 // PUT /users/profile (private)
 export const updateProfile = async (req, res) => {
   try {
-    if (!req.user?.userId) return sendError(res, "Unauthorized access", 401);
+    console.log("req.user?._id", req.user?._id);
+    if (!req.user?._id) return sendError(res, "Unauthorized access", 401);
 
     const user = await User.findById(req.user._id);
     if (!user) return sendError(res, "User not found", 404);
