@@ -1,5 +1,7 @@
 import * as yup from "yup";
 
+const urlRegex = /^(https?:\/\/)[^\s$.?#].[^\s]*$/;
+
 export const productValidationSchema = yup.object({
   title: yup
     .string()
@@ -49,22 +51,22 @@ export const productValidationSchema = yup.object({
       url: yup
         .string()
         .trim()
-        .url("Image must be a valid URL")
-        .required("Image URL is required"),
-      key: yup.string().trim().required("Image key is required"),
+        .matches(urlRegex, "Preview Image must be a valid URL")
+        .required("Preview Image URL is required"),
+      key: yup.string().trim().required("Preview Image key is required"),
     })
-    .required("Product image is required"),
-    
+    .required("Preview image is required"),
+
   originalImage: yup
     .object({
       url: yup
         .string()
         .trim()
-        .url("Image must be a valid URL")
-        .required("Image URL is required"),
-      key: yup.string().trim().required("Image key is required"),
+        .matches(urlRegex, "Original Image must be a valid URL")
+        .required("Original Image URL is required"),
+      key: yup.string().trim().required("Original Image key is required"),
     })
-    .required("Product image is required"),
+    .required("Original image is required"),
 
   mockupFiles: yup
     .array()
