@@ -22,7 +22,7 @@ export const getProfile = async (req, res) => {
       user: sanitizeUser(user),
     });
   } catch (error) {
-    console.error("Get User Profile Error:", error);
+    console.log("Get User Profile Error:", error);
     return sendError(res, "Failed to fetch profile", 500);
   }
 };

@@ -82,13 +82,14 @@ export const getWishlistById = async (req, res) => {
         return sendError(res, "Unauthorized guest access", 403);
       }
     } else {
-      if (!req.user?.userId || String(wishlist.user) !== String(req.user._id)) {
+      if (!req.user?._id || String(wishlist.user) !== String(req.user._id)) {
         return sendError(res, "Unauthorized user access", 403);
       }
     }
 
     return sendSuccess(res, "Wishlist fetched successfully", wishlist);
   } catch (error) {
+    console.log('error', error);
     return sendError(res, error.message || "Failed to fetch wishlist", 500);
   }
 };
