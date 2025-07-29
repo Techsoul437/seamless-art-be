@@ -203,6 +203,7 @@ export const updateProduct = async (req, res) => {
 
     const existingProduct = await Product.findById(id);
     if (!existingProduct) return sendError(res, "Product not found", 404);
+    console.log('existingProduct', existingProduct);
 
     const { title, slug } = req.body;
 
@@ -217,7 +218,7 @@ export const updateProduct = async (req, res) => {
     }
 
     if (slug && slug !== existingProduct.slug) {
-      const isExist = await existingProduct.findOne({
+      const isExist = await Product.findOne({
         slug,
         _id: { $ne: id },
       });
@@ -258,6 +259,7 @@ export const updateProduct = async (req, res) => {
 
     return sendSuccess(res, "Product updated successfully", updatedProduct);
   } catch (error) {
+    console.log('error', error);
     return sendError(res, error.message, 500);
   }
 };
