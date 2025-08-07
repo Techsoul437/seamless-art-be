@@ -17,23 +17,22 @@ export const sendPatternDownloadEmail = async (email, products = []) => {
           <tr>
             <!-- Product Image -->
             <td style="width: 100px;">
-              <img src="${p.imageUrl}" alt="${
-        p.name
-      }" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;" />
+              <img src="${p.imageUrl}" alt="${p.name}" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;" />
             </td>
 
             <!-- Product Details -->
             <td style="padding-left: 20px; vertical-align: top;">
-              <h3 style="margin: 0; font-size: 16px; color: #333;">${
-                p.name
-              }</h3>
+              <h3 style="margin: 0; font-size: 16px; color: #333;">${p.name}</h3>
               <p style="margin: 4px 0 8px; font-size: 14px; color: #555;">
                 Size: 3780 x 3780 px
               </p>
-              <a href="${
-                p.downloadUrl
-              }" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 6px; font-size: 14px;">
+              <a href="${p.downloadUrl}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: #fff; text-decoration: none; border-radius: 6px; font-size: 14px;">
                 Download Pattern
+              </a>
+
+              <!-- Download Invoice Button -->
+              <a href="${p.invoiceUrl}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 6px; font-size: 14px;">
+                Download Invoice
               </a>
             </td>
           </tr>

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { urlRegex } from "../utils/regexHelper.js";
 
 const productItemSchema = new mongoose.Schema(
   {
@@ -7,9 +8,30 @@ const productItemSchema = new mongoose.Schema(
       ref: "Product",
       required: true,
     },
-    paymentId: { type: String, required: true },
     amount: { type: Number, required: true },
+    title: {
+      type: String,
+      required: true,
+    },
+    originalImage: {
+      url: {
+        type: String,
+        required: true,
+        match: [urlRegex, "Original Image must be a valid URL"],
+      },
+      key: {
+        type: String,
+        required: true,
+      },
+    },
+    paymentId: { type: String, required: true },
     clientSecret: { type: String, required: true },
+    currency: { type: String, default: "usd" },
+    paymentStatus: {
+      type: String,
+      enum: ["succeeded", "pending", "failed", "refunded"],
+      default: "succeeded",
+    },
   },
   { timestamps: true }
 );

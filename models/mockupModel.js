@@ -1,6 +1,5 @@
 import mongoose from "mongoose";
-
-const urlRegex = /^(https?:\/\/)[^\s$.?#].[^\s]*$/;
+import { urlRegex } from "../utils/regexHelper.js";
 
 const mockupSchema = new mongoose.Schema(
   {

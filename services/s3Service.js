@@ -40,6 +40,25 @@ export const uploadToS3 = async (file, folder) => {
   };
 };
 
+export const uploadBufferToS3 = async (buffer, folder, filename = null) => {
+  const key = `${folder}/${filename || uuidv4()}.pdf`;
+
+  const uploadParams = {
+    Bucket,
+    Key: key,
+    Body: buffer,
+    ContentType: "application/pdf",
+  };
+
+  await s3.send(new PutObjectCommand(uploadParams));
+
+  return {
+    key,
+    url: `https://${Bucket}.s3.amazonaws.com/${key}`,
+    folder,
+  };
+};
+
 export const deleteFromS3 = async (key) => {
   if (!key) throw new Error("S3 key is required");
 

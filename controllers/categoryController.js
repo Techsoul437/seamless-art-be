@@ -47,7 +47,8 @@ export const getCategory = async (req, res) => {
       filter.name = name;
     }
 
-    const category = await Category.find(filter);
+    const category = await Category.find(filter).sort({ createdAt: -1 });
+    
     if (search && category.length === 0) {
       return sendSuccess(res, "No result found", category);
     }

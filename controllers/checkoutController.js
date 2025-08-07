@@ -5,6 +5,30 @@ import { sendError, sendSuccess } from "../utils/responseHelper.js";
 import { checkoutValidationSchema } from "../validations/checkoutValidation.js";
 import { sendPatternDownloadEmail } from "../utils/sendPatternEmail.js";
 import { generateSignedDownloadUrl } from "../services/s3Service.js";
+import { generateInvoicePdf } from "../utils/generateInvoicePdf.js";
+
+const snapshotProducts = (clientProducts, dbProducts) => {
+  return clientProducts.map((item) => {
+    const dbProduct = dbProducts.find(
+      (p) => p._id.toString() === item.productId
+    );
+
+    if (!dbProduct) {
+      throw new Error(`Product not found for ID: ${item.productId}`);
+    }
+
+    return {
+      ...item,
+      productId: dbProduct._id,
+      amount: dbProduct.price,
+      title: dbProduct.title,
+      originalImage: {
+        url: dbProduct.originalImage?.url,
+        key: dbProduct.originalImage?.key,
+      },
+    };
+  });
+};
 
 export const saveCheckoutInfo = async (req, res) => {
   try {
@@ -34,61 +58,52 @@ export const saveCheckoutInfo = async (req, res) => {
     const filter = isGuest ? { guestId, email } : { user: userId };
     let checkoutRecord = await Checkout.findOne(filter);
 
+    const snapshottedProducts = snapshotProducts(products, productsExist);
+
     if (checkoutRecord) {
-      const repeatedPurchaseProducts = products.map((p) => ({
-        productId: new mongoose.Types.ObjectId(p.productId),
-        paymentId: p.paymentId,
-        amount: p.amount,
-        clientSecret: p.clientSecret,
-        addedAt: new Date(),
-      }));
-
-      checkoutRecord.products.push(...repeatedPurchaseProducts);
+      checkoutRecord.products.push(...snapshottedProducts);
       await checkoutRecord.save();
-
-      const productDownloadDetails = await Promise.all(
-        productsExist.map(async (p) => {
-          return {
-            name: p.title,
-            imageUrl: p.originalImage?.url,
-            downloadUrl: await generateSignedDownloadUrl(p.originalImage?.key),
-          };
-        })
-      );
-
-      await sendPatternDownloadEmail(email, productDownloadDetails);
-
-      return sendSuccess(
-        res,
-        `Your order has been confirmed. The pattern file(s) have been delivered to your email - ${email}.`,
-        {
-          checkout: checkoutRecord,
-        }
-      );
-    }
-
-    const newCheckoutData = {
-      name,
-      email,
-      phone,
-      address,
-      products,
-    };
-
-    if (isGuest) {
-      newCheckoutData.guestId = guestId;
     } else {
-      newCheckoutData.user = userId;
-    }
+      const newCheckoutData = {
+        name,
+        email,
+        phone,
+        address,
+        products: snapshottedProducts,
+        ...(isGuest ? { guestId } : { user: userId }),
+      };
 
-    const newCheckout = await Checkout.create(newCheckoutData);
+      checkoutRecord = await Checkout.create(newCheckoutData);
+    }
 
     const productDownloadDetails = await Promise.all(
       productsExist.map(async (p) => {
+        const matchingCheckoutProducts = checkoutRecord.products
+          .filter((cp) => cp.productId.toString() === p._id.toString())
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        const checkoutProduct = matchingCheckoutProducts[0];
+
+        const downloadUrl = await generateSignedDownloadUrl(
+          p.originalImage?.key
+        );
+
+        const invoiceUrl = await generateInvoicePdf({
+          orderId: checkoutProduct._id.toString(),
+          email,
+          products: [p], 
+          total: `${p.originalPrice}`,
+          discount: `${p.originalPrice - p.price}`, 
+          finalTotal: `${p.price}`,
+          logoUrl:
+            "https://seamless-art-storage.s3.eu-north-1.amazonaws.com/logo/SeamlessArt+(1).png",
+        });
+
         return {
           name: p.title,
           imageUrl: p.originalImage?.url,
-          downloadUrl: await generateSignedDownloadUrl(p.originalImage?.key),
+          downloadUrl,
+          invoiceUrl,
         };
       })
     );
@@ -98,7 +113,7 @@ export const saveCheckoutInfo = async (req, res) => {
     return sendSuccess(
       res,
       `Your order has been confirmed. The pattern file(s) have been delivered to your email - ${email}.`,
-      { checkout: newCheckout }
+      { checkout: checkoutRecord }
     );
   } catch (error) {
     console.error("Guest Checkout Save Error:", error);

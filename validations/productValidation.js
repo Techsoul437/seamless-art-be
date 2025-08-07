@@ -1,6 +1,5 @@
 import * as yup from "yup";
-
-const urlRegex = /^(https?:\/\/)[^\s$.?#].[^\s]*$/;
+import { urlRegex } from "../utils/regexHelper.js";
 
 export const productValidationSchema = yup.object({
   title: yup
