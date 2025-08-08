@@ -1,6 +1,6 @@
 import express from "express";
-import { getPurchasedProducts, saveCheckoutInfo } from "../controllers/checkoutController.js";
-import { verifyToken } from "../middlewares/authMiddleware.js";
+import { getPurchasedProducts, saveCheckoutInfo } from "../../controllers/checkoutController.js";
+import { verifyToken } from "../../middlewares/authMiddleware.js";
 
 const router = express.Router();
 

@@ -1,12 +1,13 @@
 import express from "express";
-import upload from "../middlewares/multer.js";
+import upload from "../../middlewares/multer.js";
 import {
   uploadSingle,
   uploadMultiple,
   deleteImage,
   updateImage,
   downloadImage,
-} from "../controllers/imageController.js";
+  generateInvoice,
+} from "../../controllers/imageController.js";
 
 const router = express.Router();
 
@@ -15,5 +16,6 @@ router.post("/upload-multiple", upload.array("files"), uploadMultiple);
 router.delete("/delete-image/:key", deleteImage);
 router.put("/update", upload.single("file"), updateImage);
 router.get("/download", downloadImage);
+router.post("/generate-invoice", generateInvoice);
 
 export default router;

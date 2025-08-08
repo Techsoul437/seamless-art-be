@@ -32,7 +32,7 @@ export const sendPatternDownloadEmail = async (email, products = []) => {
 
               <!-- Download Invoice Button -->
               <a href="${p.invoiceUrl}" style="display: inline-block; padding: 10px 20px; background-color: #28a745; color: #fff; text-decoration: none; border-radius: 6px; font-size: 14px;">
-                Download Invoice
+                Generate Invoice
               </a>
             </td>
           </tr>

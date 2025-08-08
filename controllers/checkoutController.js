@@ -91,12 +91,11 @@ export const saveCheckoutInfo = async (req, res) => {
         const invoiceUrl = await generateInvoicePdf({
           orderId: checkoutProduct._id.toString(),
           email,
-          products: [p], 
-          total: `${p.originalPrice}`,
-          discount: `${p.originalPrice - p.price}`, 
-          finalTotal: `${p.price}`,
-          logoUrl:
-            "https://seamless-art-storage.s3.eu-north-1.amazonaws.com/logo/SeamlessArt+(1).png",
+          product: [p],
+          total: p.originalPrice,
+          discount: p.originalPrice - p.price,
+          finalTotal: p.price,
+          date: checkoutProduct.createdAt,
         });
 
         return {

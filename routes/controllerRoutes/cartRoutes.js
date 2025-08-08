@@ -5,8 +5,8 @@ import {
   removeFromCart,
   migrateGuestCart,
   emptyCart,
-} from "../controllers/cartController.js";
-import { verifyToken } from "../middlewares/authMiddleware.js";
+} from "../../controllers/cartController.js";
+import { verifyToken } from "../../middlewares/authMiddleware.js";
 
 const router = express.Router();
 

@@ -2,7 +2,7 @@ import express from "express";
 import {
   getAllOrders,
   getRevenueSummary,
-} from "../controllers/adminOrderController.js";
+} from "../../controllers/adminOrderController.js";
 
 const router = express.Router();
 

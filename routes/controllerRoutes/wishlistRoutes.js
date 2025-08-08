@@ -1,6 +1,6 @@
 import express from "express";
-import { addProductToWishlist, createWishlist, deleteWishlist, getWishlistById, getWishlists, migrateGuestWishlist, removeProductFromWishlist } from "../controllers/wishlistController.js";
-import { verifyToken } from "../middlewares/authMiddleware.js";
+import { addProductToWishlist, createWishlist, deleteWishlist, getWishlistById, getWishlists, migrateGuestWishlist, removeProductFromWishlist } from "../../controllers/wishlistController.js";
+import { verifyToken } from "../../middlewares/authMiddleware.js";
 
 const router = express.Router();
 

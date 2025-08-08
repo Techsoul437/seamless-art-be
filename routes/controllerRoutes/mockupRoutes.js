@@ -1,5 +1,5 @@
 import express from "express";
-import { addMockup, deleteMockup, getAllMockups, getMockupById, updateMockup } from "../controllers/mockupController.js";
+import { addMockup, deleteMockup, getAllMockups, getMockupById, updateMockup } from "../../controllers/mockupController.js";
 
 const router = express.Router();
 

@@ -1,4 +1,10 @@
-import { uploadToS3, updateS3Image, deleteFromS3, generateSignedDownloadUrl } from "../services/s3Service.js";
+import {
+  uploadToS3,
+  updateS3Image,
+  deleteFromS3,
+  generateSignedDownloadUrl,
+} from "../services/s3Service.js";
+import { generateInvoicePdf } from "../utils/generateInvoicePdf.js";
 import { sendSuccess, sendError } from "../utils/responseHelper.js";
 
 export const uploadSingle = async (req, res) => {
@@ -47,7 +53,9 @@ export const deleteImage = async (req, res) => {
     const { key } = req.params;
 
     if (!key) {
-      return res.status(400).json({ success: false, message: "S3 key is required" });
+      return res
+        .status(400)
+        .json({ success: false, message: "S3 key is required" });
     }
 
     const decodedKey = decodeURIComponent(key);
@@ -94,12 +102,7 @@ export const downloadImage = async (req, res) => {
   try {
     const key = req.query.key;
 
-    if (!key)
-      return sendError(
-        res,
-        "key is required for download",
-        400
-      );
+    if (!key) return sendError(res, "key is required for download", 400);
 
     const result = await generateSignedDownloadUrl(key);
 
@@ -107,5 +110,38 @@ export const downloadImage = async (req, res) => {
   } catch (error) {
     console.error("Download Pattern Error:", error);
     return sendError(res, "Failed to Download Pattern", 500, error);
+  }
+};
+
+export const generateInvoice = async (req, res) => {
+  try {
+    const { orderId, email, product, total, discount, finalTotal, date } =
+      req.body;
+
+    if (!orderId || !email || !product || !total || !finalTotal || !date) {
+      return sendError(res, "Missing required invoice fields", 400);
+    }
+
+    const invoiceUrl = await generateInvoicePdf({
+      orderId,
+      email,
+      product,
+      total,
+      discount,
+      finalTotal,
+      date,
+    });
+
+    return sendSuccess(res, "Invoice generated successfully", {
+      invoiceUrl,
+    });
+  } catch (error) {
+    console.error("Generate Invoice Error:", error);
+    return sendError(
+      res,
+      "Failed to generate invoice. Please check your registered email or your purchase confirmation email for the invoice download link.",
+      500,
+      error
+    );
   }
 };

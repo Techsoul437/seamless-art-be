@@ -1,23 +1,12 @@
 import {
-  S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import dotenv from "dotenv";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-dotenv.config();
-
-const s3 = new S3Client({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
-const Bucket = process.env.AWS_S3_BUCKET_NAME;
+import { Bucket, s3 } from "../config/s3Config.js";
 
 export const uploadToS3 = async (file, folder) => {
   const ext = path.extname(file.originalname);

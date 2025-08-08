@@ -30,6 +30,7 @@ export const getOrder = async (req, res) => {
 
     return sendSuccess(res, "Purchased products fetched", {
       id: isGuest ? guestCheckout.guestId : guestCheckout.user,
+      email: guestCheckout.email,
       products: guestCheckout.products,
     });
   } catch (error) {
