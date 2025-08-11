@@ -1,6 +1,6 @@
 import { sendError, sendSuccess } from "../../utils/responseHelper.js";
 import { faqValidationSchema } from "../../validations/faqValidation.js";
-import { Faq } from "../../models/faqModel.js";
+import { Faq, FaqDepartment } from "../../models/faqModel.js";
 import mongoose from "mongoose";
 
 export const addFaq = async (req, res) => {
@@ -27,7 +27,12 @@ export const getAllFaqs = async (req, res) => {
     }
 
     if (department) {
-      filter.department = department;
+      const dept = await FaqDepartment.findOne({ name: department });
+      if (dept) {
+        filter.department = dept._id;
+      } else {
+        return sendSuccess(res, "No FAQs found for this department", []);
+      }
     }
 
     const faqs = await Faq.find(filter)
