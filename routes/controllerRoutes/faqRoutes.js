@@ -17,7 +17,7 @@ router.put("/update/:id", updateFaq);
 router.delete("/delete/:id", deleteFaq);
 
 router.post("/depart/create", addFaqDepartment);
-router.post("/depart/get", getAllFaqDepartments);
+router.get("/depart/get", getAllFaqDepartments);
 router.get("/depart/get/:id", getFaqDepartmentById);
 router.put("/depart/update/:id", updateFaqDepartment);
 router.delete("/depart/delete/:id", deleteFaqDepartment);

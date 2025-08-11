@@ -20,7 +20,7 @@ export const addFaqDepartment = async (req, res) => {
 
 export const getAllFaqDepartments = async (req, res) => {
   try {
-    const departments = await FaqDepartment.find();
+    const departments = await FaqDepartment.find().sort({ createdAt: -1 });
     const message =
       departments.length > 0
         ? "Departments fetched successfully"

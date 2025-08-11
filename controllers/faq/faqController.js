@@ -1,6 +1,7 @@
 import { sendError, sendSuccess } from "../../utils/responseHelper.js";
 import { faqValidationSchema } from "../../validations/faqValidation.js";
 import { Faq } from "../../models/faqModel.js";
+import mongoose from "mongoose";
 
 export const addFaq = async (req, res) => {
   try {
@@ -29,7 +30,9 @@ export const getAllFaqs = async (req, res) => {
       filter.department = department;
     }
 
-    const faqs = await Faq.find(filter);
+    const faqs = await Faq.find(filter)
+      .populate("department")
+      .sort({ createdAt: -1 });
     const message =
       faqs.length > 0 ? "FAQs fetched successfully" : "No FAQs found";
     return sendSuccess(res, message, faqs);
@@ -43,8 +46,11 @@ export const getFaqById = async (req, res) => {
   try {
     const { id } = req.params;
     if (!id) return sendError(res, "Id not found", 404);
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return sendError(res, "Invalid FAQ ID format", 400);
+    }
 
-    const faq = await Faq.findById(id);
+    const faq = await Faq.findById(id).populate("department");
     if (!faq) return sendError(res, "FAQ not found", 404);
 
     return sendSuccess(res, "FAQ fetched successfully", faq);
