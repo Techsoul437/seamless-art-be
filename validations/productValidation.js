@@ -145,4 +145,9 @@ export const productValidationSchema = yup.object({
     .boolean()
     .typeError("Premium must be a boolean")
     .required("Premium status is required"),
+
+  newArrivals: yup
+    .boolean()
+    .typeError("new Arrivals must be a boolean")
+    .required("new Arrivals status is required"),
 });

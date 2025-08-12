@@ -127,6 +127,10 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
+    newArrivals: {
+      type: Boolean,
+      required: true,
+    },
   },
   { timestamps: true }
 );

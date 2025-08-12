@@ -23,6 +23,7 @@ export const addProduct = async (req, res) => {
       tags,
       slug,
       premium,
+      newArrivals,
     } = req.body;
 
     const exists = await Product.findOne({ slug });
@@ -65,6 +66,7 @@ export const addProduct = async (req, res) => {
       tags,
       slug,
       premium,
+      newArrivals
     });
 
     return sendSuccess(res, "Product created successfully", newProduct);
@@ -82,6 +84,7 @@ export const getProducts = async (req, res) => {
       type,
       status,
       premium,
+      newArrivals,
       priceStart,
       priceEnd,
       startDate,
@@ -109,6 +112,7 @@ export const getProducts = async (req, res) => {
     if (type) filter.type = type;
     if (status) filter.status = status;
     if (typeof premium === "boolean") filter.premium = premium;
+    if (typeof newArrivals === "boolean") filter.newArrivals = newArrivals;
     if (color) filter.color = { $regex: new RegExp(`^${color}$`, "i") };
 
     const minPrice = parseFloat(priceStart);
