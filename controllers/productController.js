@@ -66,7 +66,7 @@ export const addProduct = async (req, res) => {
       tags,
       slug,
       premium,
-      newArrivals
+      newArrivals,
     });
 
     return sendSuccess(res, "Product created successfully", newProduct);
@@ -83,8 +83,6 @@ export const getProducts = async (req, res) => {
       category,
       type,
       status,
-      premium,
-      newArrivals,
       priceStart,
       priceEnd,
       startDate,
@@ -93,6 +91,8 @@ export const getProducts = async (req, res) => {
       page = 1,
       limit = 10,
       sort,
+      premium,
+      newArrivals,
     } = req.body;
 
     let filter = {};
@@ -111,9 +111,14 @@ export const getProducts = async (req, res) => {
     if (category) filter.categories = category;
     if (type) filter.type = type;
     if (status) filter.status = status;
-    if (typeof premium === "boolean") filter.premium = premium;
-    if (typeof newArrivals === "boolean") filter.newArrivals = newArrivals;
     if (color) filter.color = { $regex: new RegExp(`^${color}$`, "i") };
+
+    if (premium !== undefined) {
+      filter.premium = premium === true || premium === "true";
+    }
+    if (newArrivals !== undefined) {
+      filter.newArrivals = newArrivals === true || newArrivals === "true";
+    }
 
     const minPrice = parseFloat(priceStart);
     const maxPrice = parseFloat(priceEnd);
