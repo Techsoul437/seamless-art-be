@@ -1,6 +1,7 @@
 import Inquiry from "../models/inquiryModel.js";
 import { inquiryValidationSchema } from "../validations/inquiryValidation.js";
 import { sendError, sendSuccess } from "../utils/responseHelper.js";
+import mongoose from "mongoose";
 
 export const createInquiry = async (req, res) => {
   try {
@@ -8,7 +9,7 @@ export const createInquiry = async (req, res) => {
 
     const inquiry = await Inquiry.create(req.body);
 
-    return sendSuccess(res, "Inquiry created successfully", inquiry);
+    return sendSuccess(res, "Inquiry send successfully", inquiry);
   } catch (error) {
     console.error(error.message);
     return sendError(res, error.message, 400);
@@ -85,7 +86,7 @@ export const updateInquiry = async (req, res) => {
     });
 
     return sendSuccess(res, "Inquiry updated successfully", updatedInquiry);
-  } catch (err) {
+  } catch (error) {
     console.error(error.message);
     return sendError(res, error.message, 400);
   }

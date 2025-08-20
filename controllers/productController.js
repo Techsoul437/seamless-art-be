@@ -15,7 +15,6 @@ export const addProduct = async (req, res) => {
       previewImage,
       originalImage,
       mockupFiles,
-      color,
       includedFiles,
       fileSizes,
       type,
@@ -58,7 +57,6 @@ export const addProduct = async (req, res) => {
       previewImage,
       originalImage,
       mockupFiles,
-      color,
       includedFiles,
       fileSizes,
       type,
@@ -87,7 +85,6 @@ export const getProducts = async (req, res) => {
       priceEnd,
       startDate,
       endDate,
-      color,
       page = 1,
       limit = 10,
       sort,
@@ -111,7 +108,6 @@ export const getProducts = async (req, res) => {
     if (category) filter.categories = category;
     if (type) filter.type = type;
     if (status) filter.status = status;
-    if (color) filter.color = { $regex: new RegExp(`^${color}$`, "i") };
 
     if (premium !== undefined) {
       filter.premium = premium === true || premium === "true";

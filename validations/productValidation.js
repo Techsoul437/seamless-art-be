@@ -81,19 +81,6 @@ export const productValidationSchema = yup.object({
     )
     .max(9, "You can upload a maximum of 9 mockup files")
     .notRequired(),
-
-  color: yup
-    .array()
-    .of(
-      yup
-        .string()
-        .matches(
-          /^#([0-9A-F]{3}){1,2}$/i,
-          "Each color must be a valid hex code (e.g., #FFF or #FFFFFF)"
-        )
-    )
-    .min(1, "At least one color is required")
-    .required("Color is required"),
   status: yup
     .string()
     .oneOf(

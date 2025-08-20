@@ -75,14 +75,6 @@ const productSchema = new mongoose.Schema(
       type: [mockupFileSchema],
       default: [],
     },
-    color: {
-      type: [String],
-      required: true,
-      match: [
-        /^#([0-9A-F]{3}){1,2}$/i,
-        "Color must be a valid hex code (e.g., #FFF or #FFFFFF)",
-      ],
-    },
     status: {
       type: String,
       enum: ["active", "inactive"],
