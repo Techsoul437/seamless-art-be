@@ -75,10 +75,7 @@ export const updateInquiry = async (req, res) => {
     const existingInquiry = await Inquiry.findById(id);
     if (!existingInquiry) return sendError(res, "Inquiry not found", 404);
 
-    await inquiryValidationSchema.validate(
-      { ...existingInquiry.toObject(), ...req.body },
-      { abortEarly: false }
-    );
+    await inquiryValidationSchema.validate(req.body);
 
     const updatedInquiry = await Inquiry.findByIdAndUpdate(id, req.body, {
       new: true,
