@@ -15,6 +15,8 @@ import mockupRoutes from "./controllerRoutes/mockupRoutes.js";
 import adminOrderRoutes from "./controllerRoutes/adminOrderRoutes.js";
 import faqRoutes from "./controllerRoutes/faqRoutes.js";
 import inquiryRoutes from "./controllerRoutes/inquiryRoutes.js";
+import reviewRoutes from "./controllerRoutes/reviewRoutes.js";
+import supportRoutes from "./controllerRoutes/supportRoutes.js";
 
 const router = express.Router();
 
@@ -34,5 +36,7 @@ router.use("/mockup", mockupRoutes);
 router.use("/purchase", adminOrderRoutes);
 router.use("/faq", faqRoutes);
 router.use("/inquiry", inquiryRoutes);
+router.use("/review", reviewRoutes);
+router.use("/support", supportRoutes);
 
 export default router;
