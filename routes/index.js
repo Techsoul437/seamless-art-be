@@ -17,6 +17,7 @@ import faqRoutes from "./controllerRoutes/faqRoutes.js";
 import inquiryRoutes from "./controllerRoutes/inquiryRoutes.js";
 import reviewRoutes from "./controllerRoutes/reviewRoutes.js";
 import supportRoutes from "./controllerRoutes/supportRoutes.js";
+import blogRoutes from "./controllerRoutes/blogRoutes.js";
 
 const router = express.Router();
 
@@ -38,5 +39,6 @@ router.use("/faq", faqRoutes);
 router.use("/inquiry", inquiryRoutes);
 router.use("/review", reviewRoutes);
 router.use("/support", supportRoutes);
+router.use("/blog", blogRoutes);
 
 export default router;
