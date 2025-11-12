@@ -281,26 +281,32 @@ export const getProductById = async (req, res) => {
     const { id } = req.params;
     if (!id) return sendError(res, "Product ID not provided", 404);
 
-    // ✅ Populate both `type` and `categories`
+    // ✅ Populate both `type` and `categories` with both _id and name
     const product = await Product.findById(id)
       .populate({
         path: "type",
         model: Type,
-        select: "name",
+        select: "_id name",
       })
       .populate({
         path: "categories",
         model: Category,
-        select: "name",
+        select: "_id name",
       });
 
     if (!product) return sendError(res, "Product not found", 404);
 
-    // ✅ Convert populated documents into simple name arrays
+    // ✅ Return type & categories as array of objects { _id, name }
     const formattedProduct = {
       ...product.toObject(),
-      type: product.type.map((t) => t.name),
-      categories: product.categories.map((c) => c.name),
+      type: product.type.map((t) => ({
+        _id: t._id,
+        name: t.name,
+      })),
+      categories: product.categories.map((c) => ({
+        _id: c._id,
+        name: c.name,
+      })),
     };
 
     return sendSuccess(res, "Product fetched successfully", formattedProduct);
