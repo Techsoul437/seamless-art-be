@@ -24,6 +24,7 @@ export const addProduct = async (req, res) => {
       slug,
       premium,
       newArrivals,
+      discount,
     } = req.body;
 
     const exists = await Product.findOne({ slug });
@@ -39,14 +40,13 @@ export const addProduct = async (req, res) => {
       );
     }
 
-    const categoryDocs = await Category.find({ name: { $in: categories } });
-    const maxDiscount = Math.max(
-      ...categoryDocs.map((cat) => cat.discount || 0)
-    );
+    // ✅ Parse discount (default 0 if not provided)
+    const parsedDiscount = parseFloat(discount) || 0;
 
+    // ✅ Calculate final price based on discount
     const finalPrice =
-      maxDiscount > 0
-        ? (parsedOriginal - (parsedOriginal * maxDiscount) / 100).toFixed(2)
+      parsedDiscount > 0
+        ? (parsedOriginal - (parsedOriginal * parsedDiscount) / 100).toFixed(2)
         : parsedOriginal.toFixed(2);
 
     const newProduct = await Product.create({
@@ -54,6 +54,7 @@ export const addProduct = async (req, res) => {
       subTitle,
       description,
       originalPrice: parsedOriginal.toFixed(2),
+      discount: parsedDiscount,
       price: finalPrice,
       previewImage,
       originalImage,

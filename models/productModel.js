@@ -41,6 +41,14 @@ const productSchema = new mongoose.Schema(
         message: "Original price must be a non-negative number",
       },
     },
+    discount: {
+      type: String,
+      required: true,
+      validate: {
+        validator: (v) => !isNaN(Number(v)) && Number(v) >= 0,
+        message: "Discount must be a non-negative number",
+      },
+    },
     price: {
       type: String,
       required: true,
