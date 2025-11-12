@@ -321,6 +321,7 @@ export const updateProduct = async (req, res) => {
 
     const { title, slug } = req.body;
 
+    // Check for duplicate title
     if (title && title !== existingProduct.title) {
       const isExist = await Product.findOne({
         title,
@@ -331,8 +332,9 @@ export const updateProduct = async (req, res) => {
       }
     }
 
+    // Check for duplicate slug
     if (slug && slug !== existingProduct.slug) {
-      const isExist = await existingProduct.findOne({
+      const isExist = await Product.findOne({
         slug,
         _id: { $ne: id },
       });
@@ -341,7 +343,13 @@ export const updateProduct = async (req, res) => {
       }
     }
 
+    // ✅ Handle price and discount updates
     let originalPrice = req.body.originalPrice ?? existingProduct.originalPrice;
+    let discount =
+      req.body.discount !== undefined
+        ? parseFloat(req.body.discount)
+        : existingProduct.discount || 0;
+
     const categories = req.body.categories ?? existingProduct.categories;
 
     const parsedOriginal = parseFloat(originalPrice);
@@ -353,19 +361,28 @@ export const updateProduct = async (req, res) => {
       );
     }
 
+    const parsedDiscount = isNaN(discount) ? 0 : discount;
+
+    // ✅ Combine category-based discount with product discount (use whichever is greater)
     const categoryDocs = await Category.find({ name: { $in: categories } });
-    const maxDiscount = Math.max(
-      ...categoryDocs.map((cat) => cat.discount || 0)
+    const categoryDiscount = Math.max(
+      ...categoryDocs.map((cat) => cat.discount || 0),
+      0
     );
 
+    const finalDiscount = Math.max(parsedDiscount, categoryDiscount);
+
+    // ✅ Calculate final price
     const finalPrice =
-      maxDiscount > 0
-        ? (parsedOriginal - (parsedOriginal * maxDiscount) / 100).toFixed(2)
+      finalDiscount > 0
+        ? (parsedOriginal - (parsedOriginal * finalDiscount) / 100).toFixed(2)
         : parsedOriginal.toFixed(2);
 
     req.body.price = finalPrice;
+    req.body.discount = finalDiscount;
     req.body.originalPrice = parsedOriginal.toFixed(2);
 
+    // ✅ Update product
     const updatedProduct = await Product.findByIdAndUpdate(id, req.body, {
       new: true,
       runValidators: true,
@@ -373,9 +390,11 @@ export const updateProduct = async (req, res) => {
 
     return sendSuccess(res, "Product updated successfully", updatedProduct);
   } catch (error) {
+    console.error(error);
     return sendError(res, error.message, 500);
   }
 };
+
 
 export const deleteProduct = async (req, res) => {
   try {
