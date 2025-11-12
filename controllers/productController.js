@@ -4,76 +4,6 @@ import { sendError, sendSuccess } from "../utils/responseHelper.js";
 import { productValidationSchema } from "../validations/productValidation.js";
 import Type from "../models/productTypeModel.js";
 
-// export const addProduct = async (req, res) => {
-//   try {
-//     await productValidationSchema.validate(req.body);
-
-//     const {
-//       title,
-//       subTitle,
-//       description,
-//       originalPrice,
-//       previewImage,
-//       originalImage,
-//       mockupFiles,
-//       includedFiles,
-//       fileSizes,
-//       type,
-//       categories,
-//       tags,
-//       slug,
-//       premium,
-//       newArrivals,
-//     } = req.body;
-
-//     const exists = await Product.findOne({ slug });
-//     if (exists)
-//       return sendError(res, "Product with this slug already exists", 400);
-
-//     const parsedOriginal = parseFloat(originalPrice);
-//     if (isNaN(parsedOriginal) || parsedOriginal < 0) {
-//       return sendError(
-//         res,
-//         "Original price must be a valid non-negative number",
-//         400
-//       );
-//     }
-
-//     const categoryDocs = await Category.find({ name: { $in: categories } });
-//     const maxDiscount = Math.max(
-//       ...categoryDocs.map((cat) => cat.discount || 0)
-//     );
-
-//     const finalPrice =
-//       maxDiscount > 0
-//         ? (parsedOriginal - (parsedOriginal * maxDiscount) / 100).toFixed(2)
-//         : parsedOriginal.toFixed(2);
-
-//     const newProduct = await Product.create({
-//       title,
-//       subTitle,
-//       description,
-//       originalPrice: parsedOriginal.toFixed(2),
-//       price: finalPrice,
-//       previewImage,
-//       originalImage,
-//       mockupFiles,
-//       includedFiles,
-//       fileSizes,
-//       type,
-//       categories,
-//       tags,
-//       slug,
-//       premium,
-//       newArrivals,
-//     });
-
-//     return sendSuccess(res, "Product created successfully", newProduct);
-//   } catch (error) {
-//     return sendError(res, error.message, 500);
-//   }
-// };
-
 export const addProduct = async (req, res) => {
   try {
     await productValidationSchema.validate(req.body);
@@ -142,6 +72,75 @@ export const addProduct = async (req, res) => {
     return sendError(res, error.message, 500);
   }
 };
+
+// export const addProduct = async (req, res) => {
+//   try {
+//     await productValidationSchema.validate(req.body);
+
+//     const {
+//       title,
+//       subTitle,
+//       description,
+//       originalPrice,
+//       previewImage,
+//       originalImage,
+//       mockupFiles,
+//       includedFiles,
+//       fileSizes,
+//       type,
+//       categories,
+//       tags,
+//       slug,
+//       premium,
+//       newArrivals,
+//       discount,
+//     } = req.body;
+
+//     const exists = await Product.findOne({ slug });
+//     if (exists)
+//       return sendError(res, "Product with this slug already exists", 400);
+
+//     const parsedOriginal = parseFloat(originalPrice);
+//     if (isNaN(parsedOriginal) || parsedOriginal < 0) {
+//       return sendError(
+//         res,
+//         "Original price must be a valid non-negative number",
+//         400
+//       );
+//     }
+
+//     const parsedDiscount = parseFloat(discount) || 0;
+
+//     const finalPrice =
+//       parsedDiscount > 0
+//         ? (parsedOriginal - (parsedOriginal * parsedDiscount) / 100).toFixed(2)
+//         : parsedOriginal.toFixed(2);
+
+//     const newProduct = await Product.create({
+//       title,
+//       subTitle,
+//       description,
+//       originalPrice: parsedOriginal.toFixed(2),
+//       discount: parsedDiscount,
+//       price: finalPrice,
+//       previewImage,
+//       originalImage,
+//       mockupFiles,
+//       includedFiles,
+//       fileSizes,
+//       type,
+//       categories,
+//       tags,
+//       slug,
+//       premium,
+//       newArrivals,
+//     });
+
+//     return sendSuccess(res, "Product created successfully", newProduct);
+//   } catch (error) {
+//     return sendError(res, error.message, 500);
+//   }
+// };
 
 export const getProducts = async (req, res) => {
   try {
@@ -274,26 +273,18 @@ export const getProductById = async (req, res) => {
     const { id } = req.params;
     if (!id) return sendError(res, "Product ID not provided", 404);
 
-    // ✅ Populate both `type` and `categories`
-    const product = await Product.findById(id)
-      .populate({
-        path: "type",
-        model: Type,
-        select: "name",
-      })
-      .populate({
-        path: "categories",
-        model: Category,
-        select: "name",
-      });
+    const product = await Product.findById(id).populate({
+      path: "type",
+      model: Type,
+      select: "name",
+    });
 
     if (!product) return sendError(res, "Product not found", 404);
 
-    // ✅ Convert populated documents into simple name arrays
     const formattedProduct = {
       ...product.toObject(),
-      type: product.type.map((t) => t.name),
-      categories: product.categories.map((c) => c.name),
+      type: product.type?.map((t) => t.name) || [],
+      categories: product.categories || [],
     };
 
     return sendSuccess(res, "Product fetched successfully", formattedProduct);
