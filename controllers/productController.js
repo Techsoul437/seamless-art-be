@@ -262,51 +262,51 @@ export const getProducts = async (req, res) => {
   }
 };
 
-export const getProductById = async (req, res) => {
-  try {
-    const { id } = req.params;
-    if (!id) return sendError(res, "Product ID not provided", 404);
-
-    const product = await Product.findById(id);
-    if (!product) return sendError(res, "Product not found", 404);
-
-    return sendSuccess(res, "Product fetched successfully", product);
-  } catch (error) {
-    return sendError(res, error.message, 500);
-  }
-};
-
 // export const getProductById = async (req, res) => {
 //   try {
 //     const { id } = req.params;
 //     if (!id) return sendError(res, "Product ID not provided", 404);
 
-//     const product = await Product.findById(id)
-//       .populate({
-//         path: "type",
-//         model: Type,
-//         select: "name",
-//       })
-//       .populate({
-//         path: "categories",
-//         model: Category,
-//         select: "name",
-//       });
-
+//     const product = await Product.findById(id);
 //     if (!product) return sendError(res, "Product not found", 404);
 
-//     const formattedProduct = {
-//       ...product.toObject(),
-//       type: product.type.map((t) => t.name),
-//       categories: product.categories.map((c) => c.name),
-//     };
-
-//     return sendSuccess(res, "Product fetched successfully", formattedProduct);
+//     return sendSuccess(res, "Product fetched successfully", product);
 //   } catch (error) {
-//     console.error("Error fetching product:", error);
 //     return sendError(res, error.message, 500);
 //   }
 // };
+
+export const getProductById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) return sendError(res, "Product ID not provided", 404);
+
+    const product = await Product.findById(id)
+      .populate({
+        path: "type",
+        model: Type,
+        select: "name",
+      })
+      .populate({
+        path: "categories",
+        model: Category,
+        select: "name",
+      });
+
+    if (!product) return sendError(res, "Product not found", 404);
+
+    const formattedProduct = {
+      ...product.toObject(),
+      type: product.type.map((t) => t.name),
+      categories: product.categories.map((c) => c.name),
+    };
+
+    return sendSuccess(res, "Product fetched successfully", formattedProduct);
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return sendError(res, error.message, 500);
+  }
+};
 
 export const updateProduct = async (req, res) => {
   try {
