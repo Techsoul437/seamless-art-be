@@ -35,15 +35,15 @@ export const productValidationSchema = yup.object({
         value !== undefined && !isNaN(Number(value)) && Number(value) >= 0
     ),
 
-  // price: yup
-  //   .string()
-  //   .required("Price is required")
-  //   .test(
-  //     "is-valid-number",
-  //     "Price must be a non-negative number",
-  //     (value) =>
-  //       value !== undefined && !isNaN(Number(value)) && Number(value) >= 0
-  //   ),
+  price: yup
+    .string()
+    .required("Price is required")
+    .test(
+      "is-valid-number",
+      "Price must be a non-negative number",
+      (value) =>
+        value !== undefined && !isNaN(Number(value)) && Number(value) >= 0
+    ),
 
   previewImage: yup
     .object({
