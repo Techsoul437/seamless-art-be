@@ -60,6 +60,52 @@ export const signup = async (req, res) => {
   }
 };
 
+// export const signup = async (req, res) => {
+//   await signupValidationSchema.validate(req.body);
+
+//   const { name, email, password, firebaseUid } = req.body;
+
+//   try {
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       return sendError(res, "Email already registered", 400);
+//     }
+
+//     const username = await generateUsername(name);
+
+//     const newUser = await new User({
+//       name,
+//       email,
+//       username,
+
+//       firebaseUid: firebaseUid || null, // ✅ STORE FIREBASE UID
+
+//       password: firebaseUid ? undefined : password, // ✅ only include password if normal signup
+
+//       isVerified: firebaseUid ? true : false, // Firebase/Google users auto-verified
+//     }).save();
+
+//     // Send OTP only for normal signup
+//     if (!firebaseUid) {
+//       await generateAndSendOtp(newUser);
+//     }
+
+//     return sendSuccess(res, "User registered successfully", {
+//       user: {
+//         id: newUser._id,
+//         firebaseUid: newUser.firebaseUid,
+//         name: newUser.name,
+//         email: newUser.email,
+//         username: newUser.username,
+//         isVerified: newUser.isVerified,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Signup Error:", error);
+//     return sendError(res, error.message, 500);
+//   }
+// };
+
 export const sendOtp = async (req, res) => {
   try {
     await sendOtpValidationSchema.validate(req.body);
@@ -104,10 +150,111 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
+// export const signin = async (req, res) => {
+//   try {
+//     await loginValidationSchema.validate(req.body);
+//     const { email, password } = req.body;
+
+//     const user = await User.findOne({ email }).select("+password");
+//     if (!user) {
+//       return sendError(res, "You are not Registered yet!", 404);
+//     }
+
+//     const isMatch = await bcrypt.compare(password, user.password);
+//     if (!isMatch) {
+//       return sendError(res, "Invalid email or password", 401);
+//     }
+
+//     if (!user.isVerified) {
+//       await generateAndSendOtp(user);
+//       return sendError(
+//         res,
+//         "Email not verified. OTP resent to your email.",
+//         403
+//       );
+//     }
+
+//     if (user.status === "suspended") {
+//       return sendError(
+//         res,
+//         "Your account has been suspended. Contact support.",
+//         403
+//       );
+//     }
+
+//     const token = jwt.sign({ userId: user._id, email: user.email }, secretKey, {
+//       expiresIn: "7d",
+//     });
+
+//     return sendSuccess(res, "User Logged in successfully", {
+//       token,
+//       user: {
+//         id: user._id,
+//         name: user.name,
+//         email: user.email,
+//         role: user.role,
+//       },
+//     });
+//   } catch (error) {
+//     console.log("error", error);
+//     return sendError(res, error.message, 500);
+//   }
+// };
+
 export const signin = async (req, res) => {
   try {
+    const { email, password, firebaseUid, provider } = req.body;
+
+    // GOOGLE + facebook LOGIN
+    if (provider === "google" || provider === "facebook") {
+      if (!firebaseUid || !email) {
+        return sendError(
+          res,
+          "Firebase UID and email are required for social sign-in",
+          400
+        );
+      }
+
+      const user = await User.findOne({
+        $or: [{ email }, { firebaseUid }],
+      });
+
+      if (!user) {
+        return sendError(
+          res,
+          "You are not Registered yet! Please sign up first.",
+          404
+        );
+      }
+
+      if (!user.firebaseUid) {
+        user.firebaseUid = firebaseUid;
+        await user.save();
+      }
+
+      if (user.status === "suspended") {
+        return sendError(
+          res,
+          "Your account has been suspended. Contact support.",
+          403
+        );
+      }
+
+      const token = jwt.sign({ id: user._id }, secretKey, { expiresIn: "7d" });
+
+      return sendSuccess(res, "User Logged in successfully", {
+        token,
+        user: {
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+        },
+      });
+    }
+
+    // NORMAL LOGIN
     await loginValidationSchema.validate(req.body);
-    const { email, password } = req.body;
 
     const user = await User.findOne({ email }).select("+password");
     if (!user) {
@@ -136,9 +283,7 @@ export const signin = async (req, res) => {
       );
     }
 
-    const token = jwt.sign({ userId: user._id, email: user.email }, secretKey, {
-      expiresIn: "7d",
-    });
+    const token = jwt.sign({ id: user._id }, secretKey, { expiresIn: "7d" });
 
     return sendSuccess(res, "User Logged in successfully", {
       token,

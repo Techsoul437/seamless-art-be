@@ -1,3 +1,88 @@
+// import mongoose from "mongoose";
+// import bcrypt from "bcryptjs";
+
+// const userSchema = new mongoose.Schema(
+//   {
+//     name: {
+//       type: String,
+//       required: [true, "Name is required"],
+//       trim: true,
+//     },
+//     username: {
+//       type: String,
+//       unique: true,
+//       sparse: true,
+//       trim: true,
+//       lowercase: true,
+//     },
+//     email: {
+//       type: String,
+//       required: [true, "Email is required"],
+//       unique: true,
+//       lowercase: true,
+//       match: [/.+@.+\..+/, "Please enter a valid email"],
+//     },
+//     password: {
+//       type: String,
+//       required: [true, "Password is required"],
+//       minlength: 8,
+//       select: false,
+//     },
+//     role: {
+//       type: String,
+//       enum: ["user", "admin"],
+//       default: "user",
+//     },
+//     mobile: String,
+//     image: {
+//       url: {
+//         type: String,
+//       },
+//       key: {
+//         type: String,
+//       },
+//     },
+
+//     firebaseUid : {
+//       type: String,
+//     },
+
+//     purpose: String,
+//     address: {
+//       street1: String,
+//       street2: String,
+//       city: String,
+//       state: String,
+//       zip: String,
+//       country: String,
+//     },
+//     isVerified: {
+//       type: Boolean,
+//       default: false,
+//     },
+//     status: {
+//       type: String,
+//       enum: ["active", "suspended"],
+//       default: "active",
+//     },
+//     otp: String,
+//     otpExpires: Date,
+//     resetToken: String,
+//     resetExpires: Date,
+//   },
+//   {
+//     timestamps: true,
+//   }
+// );
+
+// userSchema.pre("save", async function (next) {
+//   if (!this.isModified("password")) return next();
+//   this.password = await bcrypt.hash(this.password, 12);
+//   next();
+// });
+
+// export default mongoose.model("User", userSchema);
+
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
 
@@ -24,7 +109,9 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: [true, "Password is required"],
+      required: function () {
+        return !this.firebaseUid; // only require password when NOT firebase user
+      },
       minlength: 8,
       select: false,
     },
@@ -35,13 +122,12 @@ const userSchema = new mongoose.Schema(
     },
     mobile: String,
     image: {
-      url: {
-        type: String,
-      },
-      key: {
-        type: String,
-      },
+      url: String,
+      key: String,
     },
+
+    firebaseUid: { type: String },
+
     purpose: String,
     address: {
       street1: String,
@@ -65,13 +151,16 @@ const userSchema = new mongoose.Schema(
     resetToken: String,
     resetExpires: Date,
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 userSchema.pre("save", async function (next) {
+  // If password missing → skip hashing
+  if (!this.password) return next();
+
+  // If password unchanged → skip hashing
   if (!this.isModified("password")) return next();
+
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });

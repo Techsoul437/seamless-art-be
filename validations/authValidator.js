@@ -9,14 +9,29 @@ export const signupValidationSchema = yup.object({
     .email("Invalid email address")
     .required("Email is required"),
 
-  password: yup
-    .string()
-    .required("Password is required")
-    .min(8, "Password must be at least 8 characters")
-    .matches(/[a-z]/, "Password must contain a lowercase letter")
-    .matches(/[A-Z]/, "Password must contain an uppercase letter")
-    .matches(/[0-9]/, "Password must contain a number")
-    .matches(/[\W_]/, "Password must contain a special character"),
+  firebaseUid: yup.string().optional(),
+
+  // password: yup
+  //   .string()
+  //   .required("Password is required")
+  //   .min(8, "Password must be at least 8 characters")
+  //   .matches(/[a-z]/, "Password must contain a lowercase letter")
+  //   .matches(/[A-Z]/, "Password must contain an uppercase letter")
+  //   .matches(/[0-9]/, "Password must contain a number")
+  //   .matches(/[\W_]/, "Password must contain a special character"),
+
+  password: yup.string().when("firebaseUid", {
+    is: (uid) => !uid, // password required only when firebaseUid is NOT sent
+    then: (schema) =>
+      schema
+        .required("Password is required")
+        .min(8, "Password must be at least 8 characters")
+        .matches(/[a-z]/, "Password must contain a lowercase letter")
+        .matches(/[A-Z]/, "Password must contain an uppercase letter")
+        .matches(/[0-9]/, "Password must contain a number")
+        .matches(/[\W_]/, "Password must contain a special character"),
+    otherwise: (schema) => schema.notRequired(),
+  }),
 });
 
 export const sendOtpValidationSchema = yup.object({
