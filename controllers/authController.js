@@ -19,51 +19,10 @@ import { generateUsername } from "../utils/generateUsername.js";
 dotenv.config();
 const secretKey = process.env.JWT_SECRET;
 
-export const signup = async (req, res) => {
-  await signupValidationSchema.validate(req.body);
-
-  const { name, email, password } = req.body;
-
-  try {
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return sendError(res, "Email already registered", 400);
-    }
-
-    const username = await generateUsername(name);
-    const newUser = await new User({
-      name,
-      email,
-      username,
-      password,
-      isVerified: false,
-    }).save();
-
-    await generateAndSendOtp(newUser);
-
-    return sendSuccess(
-      res,
-      "User registered successfully. Please Verify the e-mail",
-      {
-        user: {
-          id: newUser._id,
-          name: newUser.name,
-          email: newUser.email,
-          username: newUser.username,
-          isVerified: newUser.isVerified,
-        },
-      }
-    );
-  } catch (error) {
-    console.error("Signup Error:", error);
-    return sendError(res, error.message, 500);
-  }
-};
-
 // export const signup = async (req, res) => {
 //   await signupValidationSchema.validate(req.body);
 
-//   const { name, email, password, firebaseUid } = req.body;
+//   const { name, email, password } = req.body;
 
 //   try {
 //     const existingUser = await User.findOne({ email });
@@ -72,39 +31,85 @@ export const signup = async (req, res) => {
 //     }
 
 //     const username = await generateUsername(name);
-
 //     const newUser = await new User({
 //       name,
 //       email,
 //       username,
-
-//       firebaseUid: firebaseUid || null, // ✅ STORE FIREBASE UID
-
-//       password: firebaseUid ? undefined : password, // ✅ only include password if normal signup
-
-//       isVerified: firebaseUid ? true : false, // Firebase/Google users auto-verified
+//       password,
+//       isVerified: false,
 //     }).save();
 
-//     // Send OTP only for normal signup
-//     if (!firebaseUid) {
-//       await generateAndSendOtp(newUser);
-//     }
+//     await generateAndSendOtp(newUser);
 
-//     return sendSuccess(res, "User registered successfully", {
-//       user: {
-//         id: newUser._id,
-//         firebaseUid: newUser.firebaseUid,
-//         name: newUser.name,
-//         email: newUser.email,
-//         username: newUser.username,
-//         isVerified: newUser.isVerified,
-//       },
-//     });
+//     return sendSuccess(
+//       res,
+//       "User registered successfully. Please Verify the e-mail",
+//       {
+//         user: {
+//           id: newUser._id,
+//           name: newUser.name,
+//           email: newUser.email,
+//           username: newUser.username,
+//           isVerified: newUser.isVerified,
+//         },
+//       }
+//     );
 //   } catch (error) {
 //     console.error("Signup Error:", error);
 //     return sendError(res, error.message, 500);
 //   }
 // };
+
+export const signup = async (req, res) => {
+  await signupValidationSchema.validate(req.body);
+
+  const { name, email, password, firebaseUid, provider } = req.body;
+
+  try {
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return sendError(res, "Email already registered", 400);
+    }
+
+    const username = await generateUsername(name);
+
+    const newUser = await new User({
+      name,
+      email,
+      username,
+
+      // For Google / Facebook
+      firebaseUid: firebaseUid || null,
+      provider: provider || "email",
+
+      // Only save password for normal signup
+      password: firebaseUid ? undefined : password,
+
+      // Google/Facebook always come with verified email
+      isVerified: firebaseUid ? true : false,
+    }).save();
+
+    // OTP only for normal signup
+    if (!firebaseUid) {
+      await generateAndSendOtp(newUser);
+    }
+
+    return sendSuccess(res, "User registered successfully", {
+      user: {
+        id: newUser._id,
+        firebaseUid: newUser.firebaseUid,
+        name: newUser.name,
+        email: newUser.email,
+        username: newUser.username,
+        provider: newUser.provider,
+        isVerified: newUser.isVerified,
+      },
+    });
+  } catch (error) {
+    console.error("Signup Error:", error);
+    return sendError(res, error.message, 500);
+  }
+};
 
 export const sendOtp = async (req, res) => {
   try {
