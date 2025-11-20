@@ -78,6 +78,25 @@ export const signup = async (req, res) => {
     // Auto-create initial avatar
     const avatar = await generateInitialAvatar(name);
 
+    // -----------------------------
+    // GET REAL IP (GLOBAL SUPPORT)
+    // -----------------------------
+    let ip =
+      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      req.connection?.remoteAddress ||
+      req.socket?.remoteAddress ||
+      req.ip;
+
+    // Fix localhost / VPN / undefined IP
+    if (!ip || ip === "::1" || ip === "127.0.0.1" || ip.startsWith("::ffff:")) {
+      ip = "8.8.8.8"; // fallback public IP for global lookup (testing only)
+    }
+
+    // -----------------------------
+    // GET LOCATION FROM IP
+    // -----------------------------
+    const location = await getLocationFromIp(ip);
+
     const newUser = await new User({
       name,
       email,
@@ -92,6 +111,14 @@ export const signup = async (req, res) => {
       provider: provider || "email",
       password: firebaseUid ? undefined : password,
       isVerified: firebaseUid ? true : false,
+      address: {
+        street1: "",
+        street2: "",
+        city: location.city,
+        state: location.state,
+        country: location.country,
+        zip: "",
+      },
     }).save();
 
     if (!firebaseUid) {
@@ -107,6 +134,7 @@ export const signup = async (req, res) => {
         image: newUser.image,
         provider: newUser.provider,
         isVerified: newUser.isVerified,
+        address: newUser.address,
       },
     });
   } catch (error) {
