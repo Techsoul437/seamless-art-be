@@ -15,6 +15,8 @@ import { sendResetEmail } from "../utils/sendResetEmail.js";
 import { createResetToken } from "../utils/createResetToken.js";
 import CryptoJS from "crypto-js";
 import { generateUsername } from "../utils/generateUsername.js";
+import { generateInitialAvatar } from "../utils/generateInitialAvatar.js";
+import { getLocationFromIp } from "../utils/getLocation.js";
 
 dotenv.config();
 const secretKey = process.env.JWT_SECRET;
@@ -66,43 +68,85 @@ export const signup = async (req, res) => {
   const { name, email, password, firebaseUid, provider } = req.body;
 
   try {
+    // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return sendError(res, "Email already registered", 400);
     }
 
     const username = await generateUsername(name);
+    const avatar = await generateInitialAvatar(name);
 
+    // -----------------------------
+    // GET REAL IP (GLOBAL SUPPORT)
+    // -----------------------------
+    let ip =
+      req.headers["x-forwarded-for"]?.split(",")[0] ||
+      req.connection?.remoteAddress ||
+      req.socket?.remoteAddress ||
+      req.ip;
+
+    // Fix localhost / VPN / undefined IP
+    if (
+      !ip ||
+      ip === "::1" ||
+      ip === "127.0.0.1" ||
+      ip.startsWith("::ffff:")
+    ) {
+      ip = "8.8.8.8"; // fallback public IP for global lookup (testing only)
+    }
+
+    // -----------------------------
+    // GET LOCATION FROM IP
+    // -----------------------------
+    const location = await getLocationFromIp(ip);
+
+    // -----------------------------
+    // CREATE NEW USER
+    // -----------------------------
     const newUser = await new User({
       name,
       email,
       username,
 
-      // For Google / Facebook
+      image: {
+        url: avatar.url,
+        key: avatar.key,
+      },
+
       firebaseUid: firebaseUid || null,
       provider: provider || "email",
-
-      // Only save password for normal signup
       password: firebaseUid ? undefined : password,
-
-      // Google/Facebook always come with verified email
       isVerified: firebaseUid ? true : false,
+
+      address: {
+        street1: "",
+        street2: "",
+        city: location.city,
+        state: location.state,
+        country: location.country,
+        zip: "",
+      },
     }).save();
 
-    // OTP only for normal signup
+    // Send OTP only when email-password auth
     if (!firebaseUid) {
       await generateAndSendOtp(newUser);
     }
 
+    // -----------------------------
+    // RESPONSE
+    // -----------------------------
     return sendSuccess(res, "User registered successfully", {
       user: {
         id: newUser._id,
-        firebaseUid: newUser.firebaseUid,
         name: newUser.name,
         email: newUser.email,
         username: newUser.username,
+        image: newUser.image,
         provider: newUser.provider,
         isVerified: newUser.isVerified,
+        address: newUser.address,
       },
     });
   } catch (error) {
@@ -404,3 +448,54 @@ export const changePassword = async (req, res) => {
     return sendError(res, error.message || "Server error", 500);
   }
 };
+
+// export const signup = async (req, res) => {
+//   await signupValidationSchema.validate(req.body);
+
+//   const { name, email, password, firebaseUid, provider } = req.body;
+
+//   try {
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       return sendError(res, "Email already registered", 400);
+//     }
+
+//     const username = await generateUsername(name);
+
+//     const newUser = await new User({
+//       name,
+//       email,
+//       username,
+
+//       // For Google / Facebook
+//       firebaseUid: firebaseUid || null,
+//       provider: provider || "email",
+
+//       // Only save password for normal signup
+//       password: firebaseUid ? undefined : password,
+
+//       // Google/Facebook always come with verified email
+//       isVerified: firebaseUid ? true : false,
+//     }).save();
+
+//     // OTP only for normal signup
+//     if (!firebaseUid) {
+//       await generateAndSendOtp(newUser);
+//     }
+
+//     return sendSuccess(res, "User registered successfully", {
+//       user: {
+//         id: newUser._id,
+//         firebaseUid: newUser.firebaseUid,
+//         name: newUser.name,
+//         email: newUser.email,
+//         username: newUser.username,
+//         provider: newUser.provider,
+//         isVerified: newUser.isVerified,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Signup Error:", error);
+//     return sendError(res, error.message, 500);
+//   }
+// };
