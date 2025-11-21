@@ -75,38 +75,30 @@ export const signup = async (req, res) => {
 
     const username = await generateUsername(name);
 
-    // Auto-create initial avatar
+    // Auto-create new JPG avatar
     const avatar = await generateInitialAvatar(name);
 
-    // -----------------------------
-    // GET REAL IP (GLOBAL SUPPORT)
-    // -----------------------------
+    // IP detection
     let ip =
       req.headers["x-forwarded-for"]?.split(",")[0] ||
       req.connection?.remoteAddress ||
       req.socket?.remoteAddress ||
       req.ip;
 
-    // Fix localhost / VPN / undefined IP
     if (!ip || ip === "::1" || ip === "127.0.0.1" || ip.startsWith("::ffff:")) {
-      ip = "8.8.8.8"; // fallback public IP for global lookup (testing only)
+      ip = "8.8.8.8";
     }
 
-    // -----------------------------
-    // GET LOCATION FROM IP
-    // -----------------------------
     const location = await getLocationFromIp(ip);
 
     const newUser = await new User({
       name,
       email,
       username,
-
       image: {
         url: avatar.url,
         key: avatar.key,
       },
-
       firebaseUid: firebaseUid || null,
       provider: provider || "email",
       password: firebaseUid ? undefined : password,
@@ -142,6 +134,7 @@ export const signup = async (req, res) => {
     return sendError(res, error.message, 500);
   }
 };
+
 
 export const sendOtp = async (req, res) => {
   try {

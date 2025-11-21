@@ -2,34 +2,45 @@ import sharp from "sharp";
 import { uploadAvatarToS3 } from "../services/s3AvatarService.js";
 
 export const generateInitialAvatar = async (name) => {
-  const initial = name?.charAt(0)?.toUpperCase() || "U";
+  const initial = (name?.charAt(0) || "U").toUpperCase();
 
-  const svg = `
-  <svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
-    <style>
-      @font-face {
-        font-family: 'Inter';
-        src: url('data:font/ttf;base64,
-AAEAAAANA...
-') format('truetype');
-      }
-      text { font-family: 'Inter'; }
-    </style>
+  // Background color
+  const bgColor = "#7e3230";
 
-    <rect width="100%" height="100%" fill="#7e3230" />
-    <text
-      x="50%"
-      y="50%"
-      fill="#ffffff"
-      font-size="160"
-      font-weight="bold"
-      text-anchor="middle"
-      dominant-baseline="middle"
-    >
-      ${initial}
-    </text>
-  </svg>`;
+  // Create 300x300 background
+  const background = {
+    create: {
+      width: 300,
+      height: 300,
+      channels: 3,
+      background: bgColor,
+    },
+  };
 
-  const buffer = await sharp(Buffer.from(svg)).png().toBuffer();
-  return await uploadAvatarToS3(buffer);
+  // Create SVG text layer (works everywhere — no font issues)
+  const textSvg = `
+    <svg width="300" height="300">
+      <text 
+        x="50%" 
+        y="50%" 
+        font-size="160" 
+        font-weight="bold" 
+        fill="white" 
+        text-anchor="middle"
+        dominant-baseline="central"
+      >
+        ${initial}
+      </text>
+    </svg>
+  `;
+
+  const textBuffer = Buffer.from(textSvg);
+
+  // Merge background + text
+  const finalImage = await sharp(background)
+    .composite([{ input: textBuffer, gravity: "center" }])
+    .jpeg()              // Output as JPG
+    .toBuffer();
+
+  return await uploadAvatarToS3(finalImage, "image/jpeg");
 };
