@@ -22,6 +22,8 @@ app.use("/", routes);
 app.get("/", (req, res) => {
   res.send("Seamless's backend is up and running!");
 });
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 
 const PORT = process.env.PORT || 8000;
 connectDB().then(() => {
