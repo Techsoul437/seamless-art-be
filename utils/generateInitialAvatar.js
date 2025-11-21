@@ -1,6 +1,3 @@
-import sharp from "sharp";
-import { uploadAvatarToS3 } from "../services/s3AvatarService.js";
-
 export const generateInitialAvatar = async (name) => {
   const initial = name?.charAt(0)?.toUpperCase() || "U";
 
@@ -10,10 +7,9 @@ export const generateInitialAvatar = async (name) => {
     <text
       x="50%"
       y="50%"
-      fill="#f9f5f1"
+      fill="#ffffff"
       font-size="160"
       font-weight="bold"
-      font-family="Arial, sans-serif"
       text-anchor="middle"
       dominant-baseline="middle"
     >
@@ -25,6 +21,5 @@ export const generateInitialAvatar = async (name) => {
     .png()
     .toBuffer();
 
-  // NEW FUNCTION
   return await uploadAvatarToS3(buffer);
 };
