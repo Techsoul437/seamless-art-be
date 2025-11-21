@@ -6,6 +6,16 @@ export const generateInitialAvatar = async (name) => {
 
   const svg = `
   <svg width="300" height="300" xmlns="http://www.w3.org/2000/svg">
+    <style>
+      @font-face {
+        font-family: 'Inter';
+        src: url('data:font/ttf;base64,
+AAEAAAANA...
+') format('truetype');
+      }
+      text { font-family: 'Inter'; }
+    </style>
+
     <rect width="100%" height="100%" fill="#7e3230" />
     <text
       x="50%"
@@ -21,6 +31,5 @@ export const generateInitialAvatar = async (name) => {
   </svg>`;
 
   const buffer = await sharp(Buffer.from(svg)).png().toBuffer();
-
   return await uploadAvatarToS3(buffer);
 };

@@ -67,6 +67,7 @@ export const getInquiryById = async (req, res) => {
 export const updateInquiry = async (req, res) => {
   try {
     const { id } = req.params;
+
     if (!id) return sendError(res, "Id not provided", 404);
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return sendError(res, "Invalid inquiry ID format", 400);
@@ -75,9 +76,30 @@ export const updateInquiry = async (req, res) => {
     const existingInquiry = await Inquiry.findById(id);
     if (!existingInquiry) return sendError(res, "Inquiry not found", 404);
 
-    await inquiryValidationSchema.validate(req.body);
+    // Extract only allowed fields
+    const allowedFields = [
+      "name",
+      "company",
+      "email",
+      "mobileNumber",
+      "type",
+      "message",
+      "isRead",
+    ];
 
-    const updatedInquiry = await Inquiry.findByIdAndUpdate(id, req.body, {
+    const updateData = {};
+    allowedFields.forEach((field) => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+
+    // If nothing is being updated
+    if (Object.keys(updateData).length === 0) {
+      return sendError(res, "No valid fields provided for update", 400);
+    }
+
+    const updatedInquiry = await Inquiry.findByIdAndUpdate(id, updateData, {
       new: true,
       runValidators: true,
     });
