@@ -144,12 +144,20 @@ export const sendOtp = async (req, res) => {
     const user = await User.findOne({ email });
     if (!user) return sendError(res, "User not found with this email", 404);
 
-    if (user.isVerified) return sendError(res, "Email already verified", 400);
+    // Social login users should NOT request OTP
+    if (user.provider !== "email") {
+      return sendError(res, "OTP is not required for social login users", 400);
+    }
+
+    if (user.isVerified) {
+      return sendError(res, "Email already verified", 400);
+    }
 
     await generateAndSendOtp(user);
 
     return sendSuccess(res, "OTP sent to email");
   } catch (error) {
+    console.error("Send OTP Error:", error);
     return sendError(res, error.message, 500);
   }
 };
