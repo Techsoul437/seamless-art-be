@@ -14,21 +14,21 @@ export const generateInitialAvatar = async (name) => {
   };
 
   const textSvg = `
-    <svg width="300" height="300">
-      <text 
-        x="50%" 
-        y="50%" 
-        dy="20"
-        font-size="200"
-        font-weight="700"
-        fill="white"
-        text-anchor="middle"
-      >
-        ${initial}
-      </text>
-    </svg>
-  `;
-
+  <svg width="300" height="300">
+    <text 
+      x="50%" 
+      y="50%"
+      dominant-baseline="middle"
+      alignment-baseline="middle"
+      font-size="200"
+      font-weight="700"
+      fill="white"
+      text-anchor="middle"
+    >
+      ${initial}
+    </text>
+  </svg>
+`;
   const finalImage = await sharp(background)
     .composite([{ input: Buffer.from(textSvg), gravity: "center" }])
     .jpeg()
