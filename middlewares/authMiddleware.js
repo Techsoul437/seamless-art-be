@@ -64,7 +64,7 @@ export const verifyToken = {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       // We ONLY use decoded.id
-      const userId = decoded.id;
+      const userId = decoded.id || decoded.userId || decoded._id;
 
       if (!userId) {
         return res.status(401).json({ message: "Invalid token structure" });

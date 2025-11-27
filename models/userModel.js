@@ -110,25 +110,36 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: function () {
-        return !this.firebaseUid; // only require password when NOT firebase user
+        return !this.firebaseUid;
       },
       minlength: 8,
       select: false,
     },
+
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
     },
+
     mobile: String,
+
     image: {
       url: String,
       key: String,
     },
 
+    // ⭐ IMPORTANT — ADD THIS
+    provider: {
+      type: String,
+      enum: ["email", "google", "facebook", "apple"],
+      default: "email",
+    },
+
     firebaseUid: { type: String },
 
     purpose: String,
+
     address: {
       street1: String,
       street2: String,
@@ -137,17 +148,21 @@ const userSchema = new mongoose.Schema(
       zip: String,
       country: String,
     },
+
     isVerified: {
       type: Boolean,
       default: false,
     },
+
     status: {
       type: String,
       enum: ["active", "suspended"],
       default: "active",
     },
+
     otp: String,
     otpExpires: Date,
+
     resetToken: String,
     resetExpires: Date,
   },
@@ -155,10 +170,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.pre("save", async function (next) {
-  // If password missing → skip hashing
   if (!this.password) return next();
-
-  // If password unchanged → skip hashing
   if (!this.isModified("password")) return next();
 
   this.password = await bcrypt.hash(this.password, 12);
@@ -166,3 +178,4 @@ userSchema.pre("save", async function (next) {
 });
 
 export default mongoose.model("User", userSchema);
+

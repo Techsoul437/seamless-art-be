@@ -135,7 +135,6 @@ export const signup = async (req, res) => {
   }
 };
 
-
 export const sendOtp = async (req, res) => {
   try {
     await sendOtpValidationSchema.validate(req.body);
@@ -182,7 +181,15 @@ export const verifyEmail = async (req, res) => {
       expiresIn: "7d",
     });
 
-    return sendSuccess(res, "Email verified Successfully", { token: token });
+    return sendSuccess(res, "Email verified Successfully", {
+      token: token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+      },
+    });
   } catch (error) {
     return sendError(res, error.message, 500);
   }
