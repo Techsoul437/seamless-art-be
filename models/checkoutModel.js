@@ -24,9 +24,20 @@ const productItemSchema = new mongoose.Schema(
         required: true,
       },
     },
-    paymentId: { type: String, required: true },
-    clientSecret: { type: String, required: true },
-    currency: { type: String, default: "usd" },
+    // paymentId: { type: String, required: true },
+    // clientSecret: { type: String, required: true },
+    // currency: { type: String, default: "usd" },
+
+    razorpayOrderId: { type: String },
+    razorpayPaymentId: { type: String },
+    razorpaySignature: { type: String },
+    currency: { type: String, default: "INR" },
+    paymentStatus: {
+      type: String,
+      enum: ["paid", "pending", "failed", "refunded"],
+      default: "pending",
+    },
+
     paymentStatus: {
       type: String,
       enum: ["succeeded", "pending", "failed", "refunded"],
