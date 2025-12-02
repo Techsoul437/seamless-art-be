@@ -34,8 +34,6 @@
 //   }
 // };
 
-
-
 import crypto from "crypto";
 import dotenv from "dotenv";
 import { razorpay } from "../config/razorpay.js";
@@ -56,21 +54,9 @@ export const createOrder = async (req, res) => {
       return res.status(400).json({ error: "Amount is required" });
     }
 
-    // 👉 Get USD → INR latest rate
-    const fx = await axios.get("https://open.er-api.com/v6/latest/USD");
-
-    if (!fx.data?.rates?.INR) {
-      return res.status(400).json({ error: "Currency conversion failed" });
-    }
-
-    const rate = fx.data.rates.INR; // ₹ value of $1
-
-    const amountINR = amount * rate; // convert USD → INR
-
-    // Razorpay wants paise
     const options = {
-      amount: Math.round(amountINR * 100),
-      currency: "INR",
+      amount: Math.round(amount),
+      currency: "USD",
       receipt: "order_" + Date.now(),
     };
 
@@ -126,8 +112,7 @@ export const verifyPayment = async (req, res) => {
     // UPDATE CHECKOUT PRODUCT STATUS
     // ------------------------------
     const checkout = await Checkout.findById(checkoutId);
-    if (!checkout)
-      return res.status(404).json({ error: "Checkout not found" });
+    if (!checkout) return res.status(404).json({ error: "Checkout not found" });
 
     const productIndex = checkout.products.findIndex(
       (p) => p.productId.toString() === productId
