@@ -55,7 +55,7 @@ export const createOrder = async (req, res) => {
     }
 
     const options = {
-      amount: Math.round(amount),
+      amount: Math.round(amount * 100), // amount in the smallest currency unit
       currency: "USD",
       receipt: "order_" + Date.now(),
     };
