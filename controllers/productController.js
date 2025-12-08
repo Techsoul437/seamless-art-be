@@ -163,8 +163,6 @@ export const getProducts = async (req, res) => {
       priceEnd,
       startDate,
       endDate,
-      page = 1,
-      limit = 10,
       sort,
       premium,
       newArrivals,
@@ -209,6 +207,7 @@ export const getProducts = async (req, res) => {
         ],
       };
     }
+
     if (startDate || endDate) {
       const start = startDate ? new Date(startDate) : new Date("1970-01-01");
       const end = endDate ? new Date(endDate) : new Date();
@@ -216,7 +215,6 @@ export const getProducts = async (req, res) => {
     }
 
     let sortOption = {};
-
     switch (sort) {
       case "price_low_to_high":
         sortOption = { price: 1 };
@@ -234,28 +232,17 @@ export const getProducts = async (req, res) => {
         sortOption = {};
     }
 
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    const [products, total] = await Promise.all([
-      Product.find(filter).sort(sortOption).skip(skip).limit(parseInt(limit)),
-      Product.countDocuments(filter),
-    ]);
+    const products = await Product.find(filter).sort(sortOption);
 
     if (products.length === 0) {
       return sendSuccess(res, "No results found", {
         status: 404,
         data: [],
-        page: parseInt(page),
-        totalPages: 0,
-        totalItems: 0,
       });
     }
 
     return sendSuccess(res, "Products fetched successfully", {
       data: products,
-      page: parseInt(page),
-      totalPages: Math.ceil(total / limit),
-      totalItems: total,
     });
   } catch (error) {
     console.error("Error fetching products:", error.message);
